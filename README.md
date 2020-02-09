@@ -1,2 +1,4 @@
 # twig
-A tiny logging setup for Rust applications
+
+*A tiny logging setup for Rust applications*
+

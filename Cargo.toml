@@ -1,0 +1,17 @@
+[package]
+name = "twig"
+description = "A tiny logging setup for Rust applications"
+version = "0.1.0"
+license = "Apache-2.0"
+authors = ["Duncan McGreggor <oubiwann@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "twig"
+
+[dependencies]
+chrono = "0.4.10"
+colored = "1.9.2"
+fern = { version = "0.5.9", features = ["colored"] }
+log = "0.4.6"
+serde = { version = "1.0.104", features = ["derive"] }
