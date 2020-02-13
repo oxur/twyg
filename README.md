@@ -13,11 +13,16 @@ and in LFE with [Logjam](https://github.com/lfex/logjam), so here this is.
 
 ## Usage
 
-First, update your `Cargo.toml`s dependencies section with `twyg = "0.1.2"`.
+First, update your `Cargo.toml`s dependencies section:
+
+```toml
+[dependencies]
+twyg = "0.1.3"
+```
 
 I like to put my logging setup in YAML config files for my apps, but however
-you prefer to do that, you'll next need to populate the `twyg::LoggerOpts`
-struct via your preferred mechanism:
+you prefer to store your config, you'll next need to populate the
+`twyg::LoggerOpts` struct for your preferred mechanism:
 
 ```rust
 use twyg;
