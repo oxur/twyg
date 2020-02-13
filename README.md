@@ -100,6 +100,12 @@ Use with the [config][config] library is seamless:
     };
     ```
 
+## License
+
+Copyright © 2020, Oxur Group
+
+Apache License, Version 2.0
+
 <!-- Named page links below: /-->
 
 [logo]: resources/images/logo-250x.png
