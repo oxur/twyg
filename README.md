@@ -14,10 +14,12 @@ you prefer to do that, you'll need to eventually populate the
 `twyg::LoggerOpts` struct:
 
 ```rust
+use twyg;
+
 let opts = twyg::LoggerOpts{
         colored: true,
-        file: "".to_string(),
-        level: "debug".to_string(),
+        file: String::from(""),
+        level: String::from("debug"),
         report_caller: true,
     };
 ```

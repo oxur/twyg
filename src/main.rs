@@ -4,38 +4,35 @@ use twyg;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
-    let default_opts = twyg::LoggerOpts{
+    let default_opts = twyg::LoggerOpts {
         colored: true,
-        file: "".to_string(),
-        level: "trace".to_string(),
+        file: String::from(""),
+        level: String::from("trace"),
         report_caller: true,
     };
-    let opts = 
-    if args.len() <= 1 {
+    let opts = if args.len() <= 1 {
         default_opts
     } else if args[1] == "no-caller" {
-        twyg::LoggerOpts{
+        twyg::LoggerOpts {
             colored: true,
-            file: "".to_string(),
-            level: "trace".to_string(),
+            file: String::from(""),
+            level: String::from("trace"),
             report_caller: false,
         }
     } else if args[1] == "no-color" {
-        twyg::LoggerOpts{
+        twyg::LoggerOpts {
             colored: false,
-            file: "".to_string(),
-            level: "trace".to_string(),
+            file: String::from(""),
+            level: String::from("trace"),
             report_caller: false,
         }
     } else {
         default_opts
     };
-    
+
     match twyg::setup_logger(&opts) {
-        Ok(_) => {},
-        Err(error) => {
-            panic!("Could not setup logger: {:?}", error)
-        },
+        Ok(_) => {}
+        Err(error) => panic!("Could not setup logger: {:?}", error),
     };
     println!();
     log::trace!("Testing trace log output using twig ...");
