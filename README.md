@@ -59,7 +59,7 @@ running the little demo in [main.rs](src/main.rs).
 [logo-large]: resources/images/logo-1000x.png
 [screenshot-thumb]: resources/images/screenshot-thumb.png
 [screenshot]: resources/images/screenshot.png
-[build-status]: https://github.com/oxur/twyg/workflows/Rust/badge.svg
+[build-status]: https://github.com/oxur/twyg/workflows/Build/badge.svg
 [img_crates]: https://img.shields.io/crates/v/twyg.svg
 [crates]: https://crates.io/crates/twyg
 [img_doc]: https://img.shields.io/badge/rust-documentation-blue.svg
