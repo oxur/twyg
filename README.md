@@ -23,10 +23,10 @@ struct via your preferred mechanism:
 use twyg;
 
 let opts = twyg::LoggerOpts{
-        colored: true,
-        file: String::from(""),
-        level: String::from("debug"),
-        report_caller: true,
+    colored: true,
+    file: String::from(""),
+    level: String::from("debug"),
+    report_caller: true,
     };
 
 match twyg::setup_logger(&opts) {

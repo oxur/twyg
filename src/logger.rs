@@ -102,18 +102,18 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// use twyg;
 ///
 /// let opts = twyg::LoggerOpts{
-///         colored: true,
-///         file: String::from(""),
-///         level: String::from("debug"),
-///         report_caller: true,
-///     };
+///     colored: true,
+///     file: String::from(""),
+///     level: String::from("debug"),
+///     report_caller: true,
+/// };
 ///
-///     match twyg::setup_logger(&opts) {
-///         Ok(_) => {},
-///         Err(error) => {
-///             panic!("Could not setup logger: {:?}", error)
-///         },
-///     };
+/// match twyg::setup_logger(&opts) {
+///     Ok(_) => {},
+///     Err(error) => {
+///         panic!("Could not setup logger: {:?}", error)
+///     },
+/// };
 /// ```
 ///
 /// At which point, calls to `log::*` will be displayed and formatted according
