@@ -1,8 +1,8 @@
 # twyg
 
-![build status][build-status]
-[![][img_crates]][crates]
-[![][img_doc]][doc]
+[![][build-badge]][build]
+[![][crate-badge]][crate]
+[![][docs-badge]][docs]
 
 [![][logo]][logo-large]
 
@@ -64,8 +64,9 @@ running the little demo in [main.rs](src/main.rs).
 [logo-large]: resources/images/logo-1000x.png
 [screenshot-thumb]: resources/images/screenshot-thumb.png
 [screenshot]: resources/images/screenshot.png
-[build-status]: https://github.com/oxur/twyg/workflows/build/badge.svg
-[img_crates]: https://img.shields.io/crates/v/twyg.svg
-[crates]: https://crates.io/crates/twyg
-[img_doc]: https://img.shields.io/badge/rust-documentation-blue.svg
-[doc]: https://docs.rs/twyg/
+[build]: https://github.com/oxur/twyg/actions?query=workflow%3Abuild+
+[build-badge]: https://github.com/oxur/twyg/workflows/build/badge.svg
+[crate]: https://crates.io/crates/twyg
+[crate-badge]: https://img.shields.io/crates/v/twyg.svg
+[docs]: https://docs.rs/twyg/
+[docs-badge]: https://img.shields.io/badge/rust-documentation-blue.svg
