@@ -52,12 +52,53 @@ The supported options are:
    where the logging call was made
 
 Once the setup function has been called, all subsequent calls to the standard
-Rust log functions will use this setup, providing output like the following:
+Rust logging macros will use this setup, providing output like the following:
 
 [![][screenshot-thumb]][screenshot]
 
 The output in the screenshot above (click for a a full-sized view) is from
 running the little demo in [main.rs](src/main.rs).
+
+## Config
+
+Use with the [config][config] library is seamless:
+
+1. Set up some YAML:
+
+    ```yaml
+    logging:
+        colored: true
+        file: ""
+        level: debug
+        report_caller: true
+    ```
+
+1. Add an entry to your config struct:
+
+    ```rust
+    #[derive(Debug, Deserialize)]
+    pub struct YourAppConfig {
+        ...
+        pub logging: twyg::LoggerOpts,
+        ...
+    }
+    ```
+
+1. Create a constructor for `YourAppConfig` (see config library docs and examples)
+1. Build your config:
+
+    ```rust
+    let cfg = YourAppConfig::new().unwrap();
+    ```
+
+1. Pass the logging config to twyg:
+
+    ```rust
+    match twyg::setup_logger(&cfg.logging) {
+        Ok(_) => {}
+        Err(error) => panic!("Could not setup logger: {:?}", error),
+    };
+    ```
 
 <!-- Named page links below: /-->
 
@@ -73,3 +114,4 @@ running the little demo in [main.rs](src/main.rs).
 [docs-badge]: https://img.shields.io/badge/rust-documentation-blue.svg
 [tag-badge]: https://img.shields.io/github/tag/oxur/twyg.svg
 [tag]: https://github.com/oxur/twyg/tags
+[config]: https://github.com/mehcode/config-rs
