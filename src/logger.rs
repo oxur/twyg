@@ -5,8 +5,8 @@ use log;
 use serde::Deserialize;
 use std::str::FromStr;
 
-// A reference to the `LoggerOpts` struct is required as an argument to
-// the `setup_logger` function.
+/// A reference to the `LoggerOpts` struct is required as an argument to
+/// the `setup_logger` function.
 #[derive(Debug, Deserialize)]
 pub struct LoggerOpts {
     pub colored: bool,
@@ -86,8 +86,10 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
         .level(get_log_level(opts))
         .chain(std::io::stdout())
 }
-/// Set the appropriation options (all required, currently) where the available
-/// fields are:
+/// Sets up a `fern::Dispatch` based upon the provided options.
+///
+/// The options (see the `twyg::LoggerOpts` struct) require that all of the
+/// following fields be set:
 ///
 /// * `colored`: setting to false will disable ANIS colors in the logging output
 /// * `file`: provide a path to a file, and output will be logged there too
@@ -95,8 +97,10 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// * `report_caller`: setting to true will output the filename and line number
 ///    where the logging call was made
 ///
-/// Then call the setup function passing a reference to those opts as as the
-/// sole argument.
+/// With the options set, next call the setup function, passing a reference to
+/// the opts as as the sole argument.
+///
+/// Usage example:
 ///
 /// ```rust
 /// use twyg;
@@ -116,8 +120,8 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// };
 /// ```
 ///
-/// At which point, calls to `log::*` will be displayed and formatted according
-/// to your configuration and twyg.
+/// At which point, calls to the `log::*!` macros will be displayed and
+/// formatted according to your configuration and twyg.
 ///
 pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
     colored::control::set_override(opts.colored);
