@@ -1,6 +1,6 @@
 # twyg
 
-[![][img_travis-ci]][travis-ci]
+![Build Status][build-status]
 [![][img_crates]][crates]
 [![][img_doc]][doc]
 
@@ -59,8 +59,7 @@ running the little demo in [main.rs](src/main.rs).
 [logo-large]: resources/images/logo-1000x.png
 [screenshot-thumb]: resources/images/screenshot-thumb.png
 [screenshot]: resources/images/screenshot.png
-[img_travis-ci]: https://api.travis-ci.org/oxur/twyg.png?branch=master
-[travis-ci]: https://travis-ci.org/oxur/twyg
+[build-status]: https://github.com/oxur/twyg/workflows/Rust/badge.svg
 [img_crates]: https://img.shields.io/crates/v/twyg.svg
 [crates]: https://crates.io/crates/twyg
 [img_doc]: https://img.shields.io/badge/rust-documentation-blue.svg
