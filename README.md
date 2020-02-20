@@ -33,7 +33,7 @@ let opts = twyg::LoggerOpts{
     file: String::from(""),
     level: String::from("debug"),
     report_caller: true,
-    };
+};
 
 match twyg::setup_logger(&opts) {
     Ok(_) => {},
