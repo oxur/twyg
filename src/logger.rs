@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 /// A reference to the `LoggerOpts` struct is required as an argument to
 /// the `setup_logger` function.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct LoggerOpts {
     pub colored: bool,
     pub file: String,
