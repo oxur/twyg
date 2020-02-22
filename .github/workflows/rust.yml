@@ -10,15 +10,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo build --verbose
+      run: cargo build
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test
     - name: Run Demo (color, file, line)
-      run: cargo run
+      run: cargo run --example=color-caller
     - name: Run Demo (color)
-      run: cargo run no-caller
+      run: cargo run --example=no-caller
     - name: Run Demo (no color)
-      run: cargo run no-color
+      run: cargo run --example=no-color
     - name: Notify CI/CD Slack Channel
       uses: innocarpe/actions-slack@v1
       with:

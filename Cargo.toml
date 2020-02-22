@@ -21,3 +21,12 @@ colored = "1.9.2"
 fern = { version = "0.5.9", features = ["colored"] }
 log = "0.4.6"
 serde = { version = "1.0.104", features = ["derive"] }
+
+[[example]]
+name = "color-caller"
+
+[[example]]
+name = "no-caller"
+
+#[[example]]
+#name = "no-color"
