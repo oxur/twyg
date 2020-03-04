@@ -12,3 +12,4 @@ run-demos:
 	@cargo run --example=color-caller
 	@cargo run --example=no-caller
 	@cargo run --example=no-color
+	@cargo run --example=from-config

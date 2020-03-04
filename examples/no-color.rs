@@ -7,7 +7,7 @@ use common::demo;
 fn main() {
     let opts = twyg::LoggerOpts {
         colored: false,
-        file: String::from(""),
+        file: None,
         level: String::from("trace"),
         report_caller: false,
     };

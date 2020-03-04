@@ -2,7 +2,7 @@
 name = "twyg"
 description = "A tiny logging setup for Rust applications"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.6"
 license = "Apache-2.0"
 authors = ["Duncan McGreggor <oubiwann@gmail.com>"]
 repository = "https://github.com/oxur/twyg"
@@ -22,6 +22,9 @@ fern = { version = "0.5.9", features = ["colored"] }
 log = "0.4.6"
 serde = { version = "1.0.104", features = ["derive"] }
 
+[dev-dependencies]
+config = "0.10.1"
+
 [[example]]
 name = "color-caller"
 
@@ -30,3 +33,6 @@ name = "no-caller"
 
 #[[example]]
 #name = "no-color"
+
+#[[example]]
+#name = "from-config"

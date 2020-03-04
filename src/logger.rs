@@ -10,7 +10,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct LoggerOpts {
     pub colored: bool,
-    pub file: String,
+    pub file: Option<String>,
     pub level: String,
     pub report_caller: bool,
 }
@@ -107,15 +107,15 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 ///
 /// let opts = twyg::LoggerOpts{
 ///     colored: true,
-///     file: String::from(""),
+///     file: None,
 ///     level: String::from("debug"),
 ///     report_caller: true,
 /// };
 ///
 /// match twyg::setup_logger(&opts) {
 ///     Ok(_) => {},
-///     Err(error) => {
-///         panic!("Could not setup logger: {:?}", error)
+///     Err(e) => {
+///         panic!("Could not setup logger: {:?}", e)
 ///     },
 /// };
 /// ```
@@ -130,10 +130,9 @@ pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
     } else {
         get_logger(opts)
     };
-    if opts.file != "" {
-        logger.chain(fern::log_file(&opts.file)?).apply()?
-    } else {
-        logger.apply()?;
+    match &opts.file {
+        Some(f) => logger.chain(fern::log_file(f)?).apply()?,
+        _ => logger.apply()?,
     }
     Ok(())
 }
