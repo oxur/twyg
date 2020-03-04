@@ -30,7 +30,7 @@ use twyg;
 
 let opts = twyg::LoggerOpts{
     colored: true,
-    file: String::from(""),
+    file: None,
     level: String::from("debug"),
     report_caller: true,
 };
@@ -68,7 +68,6 @@ Use with the [config][config] library is seamless:
     ```yaml
     logging:
         colored: true
-        file: ""
         level: debug
         report_caller: true
     ```
