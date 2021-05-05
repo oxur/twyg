@@ -16,23 +16,23 @@ edition = "2018"
 name = "twyg"
 
 [dependencies]
-chrono = "0.4.10"
-colored = "1.9.2"
-fern = { version = "0.5.9", features = ["colored"] }
-log = "0.4.6"
-serde = { version = "1.0.104", features = ["derive"] }
+chrono = "0.4.19"
+colored = "2.0.0"
+fern = { version = "0.6.0", features = ["colored"] }
+log = "0.4.14"
+serde = { version = "1.0.125", features = ["derive"] }
 
 [dev-dependencies]
-config = "0.10.1"
+config = { version = "0.11.0", default-features = false, features = [ "yaml" ] }
 
 [[example]]
-name = "color-caller"
+name = "colour-caller"
 
 [[example]]
 name = "no-caller"
 
-#[[example]]
-#name = "no-color"
+[[example]]
+name = "no-colour"
 
-#[[example]]
-#name = "from-config"
+[[example]]
+name = "from-config"
