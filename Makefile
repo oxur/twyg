@@ -8,8 +8,8 @@ build:
 test:
 	@cargo test
 
-run-demos:
-	@cargo run --example=color-caller
+demos:
+	@cargo run --example=colour-caller
 	@cargo run --example=no-caller
-	@cargo run --example=no-color
+	@cargo run --example=no-colour
 	@cargo run --example=from-config
