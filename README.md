@@ -9,8 +9,9 @@
 
 *A tiny logging setup for Rust applications*
 
-I got used to logging my apps in Clojure with [Twig](https://github.com/clojusc/twig)
-and in LFE with [Logjam](https://github.com/lfex/logjam), so here this is.
+I got used to logging my apps in Clojure with [Twig](https://github.com/clojusc/twig),
+in LFE with [Logjam](https://github.com/lfex/logjam), and in Go with
+[zylog](https://github.com/geomyidia/zylog), so here this is for Rust.
 
 ## Usage
 
@@ -29,7 +30,7 @@ you prefer to store your config, you'll next need to populate the
 use twyg;
 
 let opts = twyg::LoggerOpts{
-    colored: true,
+    coloured: true,
     file: None,
     level: String::from("debug"),
     report_caller: true,
@@ -56,8 +57,8 @@ Rust logging macros will use this setup, providing output like the following:
 
 [![][screenshot-thumb]][screenshot]
 
-The output in the screenshot above (click for a a full-sized view) is from
-running the little demo in [main.rs](src/main.rs).
+The output in the screenshot above (click for a full-sized view) is from
+running the demos in the `examples` directory.
 
 ## Config
 
@@ -67,7 +68,7 @@ Use with the [config][config] library is seamless:
 
     ```yaml
     logging:
-        colored: true
+        coloured: true
         level: debug
         report_caller: true
     ```
@@ -87,7 +88,7 @@ Use with the [config][config] library is seamless:
 1. Build your config:
 
     ```rust
-    let cfg = YourAppConfig::new().unwrap();
+    let cfg = YourAppConfig::default().unwrap();
     ```
 
 1. Pass the logging config to twyg:
@@ -101,7 +102,7 @@ Use with the [config][config] library is seamless:
 
 ## License
 
-Copyright © 2020, Oxur Group
+Copyright © 2020-2021, Oxur Group
 
 Apache License, Version 2.0
 
@@ -109,7 +110,7 @@ Apache License, Version 2.0
 
 [logo]: resources/images/logo-250x.png
 [logo-large]: resources/images/logo-1000x.png
-[screenshot-thumb]: resources/images/screenshot-thumb.png
+[screenshot-thumb]: resources/images/screenshot-thumb.jpg
 [screenshot]: resources/images/screenshot.png
 [build]: https://github.com/oxur/twyg/actions?query=workflow%3Abuild+
 [build-badge]: https://github.com/oxur/twyg/workflows/build/badge.svg
