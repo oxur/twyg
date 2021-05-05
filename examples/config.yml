@@ -1,4 +1,4 @@
 logging:
-  colored: true
+  coloured: true
   level: debug
   report_caller: true

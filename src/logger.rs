@@ -3,13 +3,14 @@ use colored::*;
 use fern::InitError;
 use log;
 use serde::Deserialize;
+use std::fmt::Arguments;
 use std::str::FromStr;
 
 /// A reference to the `LoggerOpts` struct is required as an argument to
 /// the `setup_logger` function.
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct LoggerOpts {
-    pub colored: bool,
+    pub coloured: bool,
     pub file: Option<String>,
     pub level: String,
     pub report_caller: bool,
@@ -34,7 +35,7 @@ fn get_opt_u32(x: Option<u32>) -> String {
     }
 }
 
-fn color_level(level: log::Level) -> colored::ColoredString {
+fn colour_level(level: log::Level) -> colored::ColoredString {
     match level {
         log::Level::Error => level.to_string().red(),
         log::Level::Warn => level.to_string().bright_yellow(),
@@ -44,17 +45,21 @@ fn color_level(level: log::Level) -> colored::ColoredString {
     }
 }
 
+fn format_msg(msg: &Arguments<'_>) -> colored::ColoredString {
+    format!("{} {}", "▶".cyan(), msg.to_string()).green()
+}
+
 fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
-                "{date} [{target}] [{level}] {file} {message}",
+                "{date} {level} [{file} {target}] {message}",
                 date = chrono::Local::now()
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
                     .green(),
                 target = record.target().to_string().bright_green(),
-                level = color_level(record.level()),
+                level = colour_level(record.level()),
                 file = format_args!(
                     "{}:{}",
                     get_opt_str(record.file()),
@@ -62,7 +67,7 @@ fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
                 )
                 .to_string()
                 .yellow(),
-                message = message.to_string().green(),
+                message = format_msg(message),
             ))
         })
         .level(get_log_level(opts))
@@ -73,14 +78,14 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
-                "{date} [{target}] [{level}] {message}",
+                "{date} {level} [{target}] {message}",
                 date = chrono::Local::now()
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
                     .green(),
                 target = record.target().to_string().bright_green(),
-                level = color_level(record.level()),
-                message = message.to_string().green(),
+                level = colour_level(record.level()),
+                message = format_msg(message),
             ))
         })
         .level(get_log_level(opts))
@@ -91,7 +96,7 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// The options (see the `twyg::LoggerOpts` struct) require that all of the
 /// following fields be set:
 ///
-/// * `colored`: setting to false will disable ANIS colors in the logging output
+/// * `coloured`: setting to false will disable ANIS colors in the logging output
 /// * `file`: provide a path to a file, and output will be logged there too
 /// * `level`: case-insensitive logging level
 /// * `report_caller`: setting to true will output the filename and line number
@@ -106,7 +111,7 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// use twyg;
 ///
 /// let opts = twyg::LoggerOpts{
-///     colored: true,
+///     coloured: true,
 ///     file: None,
 ///     level: String::from("debug"),
 ///     report_caller: true,
@@ -124,7 +129,7 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// formatted according to your configuration and twyg.
 ///
 pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
-    colored::control::set_override(opts.colored);
+    colored::control::set_override(opts.coloured);
     let logger = if opts.report_caller {
         get_report_caller_logger(opts)
     } else {

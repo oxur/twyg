@@ -14,11 +14,11 @@ jobs:
     - name: Run tests
       run: cargo test
     - name: Run Demo (color, file, line)
-      run: cargo run --example=color-caller
+      run: cargo run --example=colour-caller
     - name: Run Demo (color)
       run: cargo run --example=no-caller
     - name: Run Demo (no color)
-      run: cargo run --example=no-color
+      run: cargo run --example=no-colour
     - name: Notify CI/CD Slack Channel
       uses: innocarpe/actions-slack@v1
       with:
