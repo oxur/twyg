@@ -111,7 +111,7 @@ Apache License, Version 2.0
 [logo]: resources/images/logo-250x.png
 [logo-large]: resources/images/logo-1000x.png
 [screenshot-thumb]: resources/images/screenshot-thumb.jpg
-[screenshot]: resources/images/screenshot.png
+[screenshot]: https://raw.githubusercontent.com/oxur/twyg/main/resources/images/screenshot.png
 [build]: https://github.com/oxur/twyg/actions?query=workflow%3Abuild+
 [build-badge]: https://github.com/oxur/twyg/workflows/build/badge.svg
 [crate]: https://crates.io/crates/twyg
