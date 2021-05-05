@@ -22,7 +22,7 @@ impl AppConfig {
 }
 
 pub fn new_app_config() -> Result<AppConfig, cfglib::ConfigError> {
-    let mut c = cfglib::Config::new();
+    let mut c = cfglib::Config::default();
     // Start off by merging in the default configuration values
     c.merge(cfglib::File::with_name(CONFIG_FILE))?;
     c.try_into()
