@@ -8,11 +8,11 @@ pub fn logs_sample(opts: twyg::LoggerOpts) {
     };
 
     println!();
-    log::trace!("Testing trace log output using twig ...");
-    log::debug!("Testing trace log output using twig ...");
-    log::info!("Testing trace log output using twig ...");
-    log::warn!("Testing trace log output using twig ...");
-    log::error!("Testing trace log output using twig ...");
+    log::trace!("Testing trace log output using twyg ...");
+    log::debug!("Testing trace log output using twyg ...");
+    log::info!("Testing trace log output using twyg ...");
+    log::warn!("Testing trace log output using twyg ...");
+    log::error!("Testing trace log output using twyg ...");
     println!();
     log::debug!("Here's some data: {:?}", opts);
     println!();
