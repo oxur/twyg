@@ -102,11 +102,11 @@ Use with the [config][config] library is seamless:
 
 ## License
 
-Copyright © 2020-2021, Oxur Group
+Copyright © 2020-2022, Oxur Group
 
 Apache License, Version 2.0
 
-<!-- Named page links below: /-->
+[//]: ---Named-Links---
 
 [logo]: resources/images/logo-250x.png
 [logo-large]: resources/images/logo-1000x.png
