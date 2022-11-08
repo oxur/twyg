@@ -19,7 +19,7 @@ First, update your `Cargo.toml`s dependencies section:
 
 ```toml
 [dependencies]
-twyg = "0.1.8"
+twyg = "0.1.10"
 ```
 
 I like to put my logging setup in YAML config files for my apps, but however

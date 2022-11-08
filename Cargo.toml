@@ -2,7 +2,7 @@
 name = "twyg"
 description = "A tiny logging setup for Rust applications"
 readme = "README.md"
-version = "0.1.9"
+version = "0.1.10"
 license = "Apache-2.0"
 authors = ["Duncan McGreggor <oubiwann@gmail.com>"]
 repository = "https://github.com/oxur/twyg"
