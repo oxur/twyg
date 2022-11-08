@@ -58,7 +58,7 @@ fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
                     .green(),
-                target = record.target().to_string().bright_green(),
+                target = record.target().to_string().bright_yellow(),
                 level = colour_level(record.level()),
                 file = format_args!(
                     "{}:{}",
@@ -67,7 +67,7 @@ fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
                 )
                 .to_string()
                 .yellow(),
-                message = format_msg(message),
+                message = format_msg(message).bright_green(),
             ))
         })
         .level(get_log_level(opts))
@@ -83,9 +83,9 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
                     .green(),
-                target = record.target().to_string().bright_green(),
+                target = record.target().to_string().bright_yellow(),
                 level = colour_level(record.level()),
-                message = format_msg(message),
+                message = format_msg(message).bright_green(),
             ))
         })
         .level(get_log_level(opts))
