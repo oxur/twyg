@@ -16,3 +16,6 @@ demos:
 
 deps:
 	@cargo update
+
+publish:
+	@cargo publish
