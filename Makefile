@@ -1,6 +1,6 @@
 default: all
 
-all: build test run-demos
+all: deps build test demos
 
 build:
 	@cargo build
@@ -13,3 +13,6 @@ demos:
 	@cargo run --example=no-caller
 	@cargo run --example=no-colour
 	@cargo run --example=from-config
+
+deps:
+	@cargo update
