@@ -4,34 +4,25 @@ use twyg;
 
 const CONFIG_FILE: &str = "examples/config";
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
     pub logging: twyg::LoggerOpts,
 }
 
 impl AppConfig {
-    pub fn new() -> Self {
-        match new_app_config() {
-            Ok(c) => c,
-            Err(e) => {
-                println!("{:?}", e);
-                panic!("Configuration error: check the config file");
-            }
-        }
+    pub fn new() -> Result<Self, cfglib::ConfigError> {
+        let cfg = cfglib::Config::builder()
+            .add_source(cfglib::File::new(CONFIG_FILE, cfglib::FileFormat::Yaml))
+            .add_source(cfglib::Environment::with_prefix("TWYG"))
+            .build()?;
+        cfg.try_deserialize()
     }
-}
-
-pub fn new_app_config() -> Result<AppConfig, cfglib::ConfigError> {
-    let mut c = cfglib::Config::default();
-    // Start off by merging in the default configuration values
-    c.merge(cfglib::File::with_name(CONFIG_FILE))?;
-    c.try_into()
 }
 
 mod common;
 use common::demo;
 
 fn main() {
-    let cfg = AppConfig::new();
+    let cfg = AppConfig::new().unwrap();
     demo::logs_sample(cfg.logging);
 }
