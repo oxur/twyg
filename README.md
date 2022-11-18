@@ -46,7 +46,7 @@ match twyg::setup_logger(&opts) {
 
 The supported options are:
 
-* `colored`: setting to false will disable ANIS colors in the logging output
+* `coloured`: setting to false will disable ANIS colours in the logging output
 * `file`: provide a path to a file, and output will be logged there too
 * `level`: case-insensitive logging level
 * `report_caller`: setting to true will output the filename and line number
