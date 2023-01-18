@@ -2,13 +2,13 @@ use chrono;
 use colored::*;
 use fern::InitError;
 use log;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fmt::Arguments;
 use std::str::FromStr;
 
 /// A reference to the `LoggerOpts` struct is required as an argument to
 /// the `setup_logger` function.
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct LoggerOpts {
     pub coloured: bool,
     pub file: Option<String>,
