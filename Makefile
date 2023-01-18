@@ -18,14 +18,18 @@ lint:
 test:
 	@cargo test
 
-demos:
+examples:
 	@cargo run --example=colour-caller
 	@cargo run --example=no-caller
 	@cargo run --example=no-colour
 	@cargo run --example=from-config
+
+demos: examples
 
 deps:
 	@cargo update
 
 publish:
 	@cargo publish
+
+.PHONY: default all auth build lint test examples demos deps publish
