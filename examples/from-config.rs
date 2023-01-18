@@ -1,6 +1,5 @@
 extern crate config as cfglib;
 use serde::Deserialize;
-use twyg;
 
 const CONFIG_FILE: &str = "examples/config";
 

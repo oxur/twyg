@@ -46,7 +46,7 @@ fn colour_level(level: log::Level) -> colored::ColoredString {
 }
 
 fn format_msg(msg: &Arguments<'_>) -> colored::ColoredString {
-    format!("{} {}", "▶".cyan(), msg.to_string()).green()
+    format!("{} {}", "▶".cyan(), msg).green()
 }
 
 fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {

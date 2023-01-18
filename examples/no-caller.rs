@@ -1,5 +1,3 @@
-use twyg;
-
 mod common;
 
 use common::demo;
