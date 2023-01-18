@@ -12,6 +12,9 @@ auth:
 build:
 	@cargo build
 
+lint:
+	@cargo clippy --all-targets --all-features -- --no-deps -D warnings
+
 test:
 	@cargo test
 
