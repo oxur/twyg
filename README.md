@@ -11,7 +11,7 @@
 
 I got used to logging my apps in Clojure with [Twig](https://github.com/clojusc/twig),
 in LFE with [Logjam](https://github.com/lfex/logjam), and in Go with
-[zylog](https://github.com/geomyidia/zylog), so here this is for Rust.
+[zylog](https://github.com/geomyidia/zylog), so here's something similar for Rust.
 
 ## Usage
 
@@ -19,7 +19,7 @@ First, update your `Cargo.toml`s dependencies section:
 
 ```toml
 [dependencies]
-twyg = "0.1.10"
+twyg = "0.1.11"
 ```
 
 I like to put my logging setup in YAML config files for my apps, but however
