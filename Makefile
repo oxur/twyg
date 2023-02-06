@@ -13,7 +13,12 @@ build:
 	@cargo build
 
 lint:
-	@cargo clippy --all-targets --all-features -- --no-deps -D warnings
+	@cargo +nightly clippy --version
+	@cargo +nightly clippy --all-targets --all-features -- --no-deps -D clippy::all
+
+cicd-lint:
+	@cargo clippy --version
+	@cargo clippy --all-targets --all-features -- --no-deps -D clippy::all
 
 test:
 	@cargo test
@@ -31,5 +36,8 @@ deps:
 
 publish:
 	@cargo publish
+
+nightly:
+	@rustup toolchain install nightly
 
 .PHONY: default all auth build lint test examples demos deps publish
