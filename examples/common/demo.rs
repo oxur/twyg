@@ -4,7 +4,7 @@ use twyg;
 pub fn logs_sample(opts: twyg::LoggerOpts) {
     match twyg::setup_logger(&opts) {
         Ok(_) => {}
-        Err(error) => panic!("Could not setup logger: {:?}", error),
+        Err(error) => panic!("Could not setup logger: {error:?}"),
     };
 
     println!();
