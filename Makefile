@@ -20,6 +20,9 @@ cicd-lint:
 	@cargo clippy --version
 	@cargo clippy --all-targets --all-features -- --no-deps -D clippy::all
 
+check:
+	@cargo deny check
+
 test:
 	@cargo test
 
@@ -39,5 +42,9 @@ publish:
 
 nightly:
 	@rustup toolchain install nightly
+
+setup-cargo-deny:
+	@echo ">> Setting up cargo deny ..."
+	@cargo install --locked cargo-deny && cargo deny init
 
 .PHONY: default all auth build lint test examples demos deps publish
