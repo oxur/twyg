@@ -119,7 +119,7 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// match twyg::setup_logger(&opts) {
 ///     Ok(_) => {},
 ///     Err(e) => {
-///         panic!("Could not setup logger: {:?}", e)
+///         panic!("Could not setup logger: {e:?}")
 ///     },
 /// };
 /// ```

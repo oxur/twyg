@@ -15,6 +15,6 @@ pub fn logs_sample(opts: twyg::LoggerOpts) {
     log::warn!("Testing trace log output using twyg ...");
     log::error!("Testing trace log output using twyg ...");
     println!();
-    log::debug!("Here's some data: {:?}", opts);
+    log::debug!("Here's some data: {opts:?}");
     println!();
 }
