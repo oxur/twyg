@@ -45,11 +45,15 @@ publish:
 nightly:
 	@rustup toolchain install nightly
 
-setup-cargo-deny:
-	@echo ">> Setting up cargo deny ..."
-	@cargo install --locked cargo-deny && cargo deny init
+install-cargo-deny:
+	@echo ">> Installing cargo deny ..."
+	@cargo install --locked cargo-deny
 
-setup-udeps:
+setup-cargo-deny: install-cargo-deny
+	@echo ">> Setting up cargo deny ..."
+	@cargo deny init
+
+install-udeps:
 	@echo ">> Setting up cargo udeps ..."
 	@cargo install cargo-udeps --locked
 

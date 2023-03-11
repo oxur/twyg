@@ -18,12 +18,13 @@ jobs:
       run: cargo build
     - name: Lint
       run: make cicd-lint
-    - name: Run tests
     - name: Run checks
       run: |
-        make setup-cargo-deny
-        make setup-udeps
+        make nightly
+        make install-cargo-deny
+        make install-udeps
         make check
+    - name: Run tests
       run: cargo test
     - name: Run Demo (color, file, line)
       run: cargo run --example=colour-caller
