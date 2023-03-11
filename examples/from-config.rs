@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Error, Result};
 use config as cfglib;
 use serde::Deserialize;
 
@@ -9,12 +10,15 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn new() -> Result<Self, cfglib::ConfigError> {
-        let cfg = cfglib::Config::builder()
+    pub fn new() -> Result<AppConfig, Error> {
+        let build = cfglib::Config::builder()
             .add_source(cfglib::File::new(CONFIG_FILE, cfglib::FileFormat::Yaml))
             .add_source(cfglib::Environment::with_prefix("TWYG"))
-            .build()?;
-        cfg.try_deserialize()
+            .build();
+        match build {
+            Ok(cfg) => Ok(cfg.try_deserialize()?),
+            Err(e) => Err(anyhow!(e)),
+        }
     }
 }
 
