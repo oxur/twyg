@@ -2,9 +2,9 @@ use std::fmt::Arguments;
 use std::str::FromStr;
 
 use chrono;
-use colored::*;
 use fern::InitError;
 use log;
+use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 /// A reference to the `LoggerOpts` struct is required as an argument to
@@ -36,18 +36,18 @@ fn get_opt_u32(x: Option<u32>) -> String {
     }
 }
 
-fn colour_level(level: log::Level) -> colored::ColoredString {
+fn colour_level(level: log::Level) -> String {
     match level {
-        log::Level::Error => level.to_string().red(),
-        log::Level::Warn => level.to_string().bright_yellow(),
-        log::Level::Info => level.to_string().bright_green(),
-        log::Level::Debug => level.to_string().cyan(),
-        log::Level::Trace => level.to_string().bright_blue(),
+        log::Level::Error => level.to_string().red().to_string(),
+        log::Level::Warn => level.to_string().bright_yellow().to_string(),
+        log::Level::Info => level.to_string().bright_green().to_string(),
+        log::Level::Debug => level.to_string().cyan().to_string(),
+        log::Level::Trace => level.to_string().bright_blue().to_string(),
     }
 }
 
-fn format_msg(msg: &Arguments<'_>) -> colored::ColoredString {
-    format!("{} {}", "▶".cyan(), msg).green()
+fn format_msg(msg: &Arguments<'_>) -> String {
+    format!("{} {}", "▶".cyan(), msg).green().to_string()
 }
 
 fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
@@ -130,7 +130,6 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 /// formatted according to your configuration and twyg.
 ///
 pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
-    colored::control::set_override(opts.coloured);
     let mut logger = if opts.report_caller {
         get_report_caller_logger(opts)
     } else {
