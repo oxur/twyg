@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.69"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "224afbd727c3d6e4b90103ece64b8d1b67fbb1973b1046c2281eed3f3803f800"
+
+[[package]]
 name = "async-trait"
 version = "0.1.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,6 +108,16 @@ dependencies = [
  "pathdiff",
  "serde",
  "yaml-rust",
+]
+
+[[package]]
+name = "confyg"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c99720eb2afee1ee72022147dcd1fd2fb74e098c4a9cb1925a7ca2a9f167326f"
+dependencies = [
+ "serde",
+ "toml",
 ]
 
 [[package]]
@@ -382,11 +398,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e153e1f1acaef8acc537e68b44906d2db6436e2b35ac2c6b42640fff91f00fd"
 
 [[package]]
+name = "toml"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "twyg"
 version = "0.1.13"
 dependencies = [
+ "anyhow",
  "chrono",
  "config",
+ "confyg",
  "fern",
  "log",
  "owo-colors",

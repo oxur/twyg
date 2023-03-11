@@ -1,7 +1,7 @@
-extern crate config as cfglib;
+use config as cfglib;
 use serde::Deserialize;
 
-const CONFIG_FILE: &str = "examples/config";
+const CONFIG_FILE: &str = "examples/config.yml";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {

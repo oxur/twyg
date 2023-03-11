@@ -31,6 +31,7 @@ examples:
 	@cargo run --example=no-caller
 	@cargo run --example=no-colour
 	@cargo run --example=from-config
+	@cargo run --example=from-confyg
 
 demos: examples
 
