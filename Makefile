@@ -1,6 +1,6 @@
 default: all
 
-all: deps build lint test demos
+all: deps build lint check test demos
 
 auth:
 	@echo "Copy and paste the following in the terminal where you"
@@ -22,6 +22,7 @@ cicd-lint:
 
 check:
 	@cargo deny check
+	@cargo +nightly udeps
 
 test:
 	@cargo test
@@ -47,5 +48,9 @@ nightly:
 setup-cargo-deny:
 	@echo ">> Setting up cargo deny ..."
 	@cargo install --locked cargo-deny && cargo deny init
+
+setup-udeps:
+	@echo ">> Setting up cargo udeps ..."
+	@cargo install cargo-udeps --locked
 
 .PHONY: default all auth build lint test examples demos deps publish
