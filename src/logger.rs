@@ -1,10 +1,11 @@
+use std::fmt::Arguments;
+use std::str::FromStr;
+
 use chrono;
 use colored::*;
 use fern::InitError;
 use log;
 use serde::{Deserialize, Serialize};
-use std::fmt::Arguments;
-use std::str::FromStr;
 
 /// A reference to the `LoggerOpts` struct is required as an argument to
 /// the `setup_logger` function.
@@ -130,14 +131,20 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
 ///
 pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
     colored::control::set_override(opts.coloured);
-    let logger = if opts.report_caller {
+    let mut logger = if opts.report_caller {
         get_report_caller_logger(opts)
     } else {
         get_logger(opts)
     };
-    match &opts.file {
-        Some(f) => logger.chain(fern::log_file(f)?).apply()?,
-        _ => logger.apply()?,
+    logger = match &opts.file {
+        Some(f) => logger.chain(fern::log_file(f)?),
+        _ => logger,
+    };
+    match logger.apply() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log::warn!("{e}");
+            Ok(())
+        }
     }
-    Ok(())
 }
