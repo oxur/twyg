@@ -1,11 +1,14 @@
 use std::fmt::Arguments;
+use std::io;
 use std::str::FromStr;
 
-use chrono;
+use chrono::Local;
 use fern::InitError;
 use log;
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
+
+const TIMESTAMP: &str = "%Y-%m-%d %H:%M:%S";
 
 /// A reference to the `LoggerOpts` struct is required as an argument to
 /// the `setup_logger` function.
@@ -32,17 +35,18 @@ fn get_opt_str(x: Option<&str>) -> String {
 fn get_opt_u32(x: Option<u32>) -> String {
     match x {
         None => "??".to_string(),
-        Some(_) => x.unwrap().to_string(),
+        Some(val) => val.to_string(),
     }
 }
 
 fn colour_level(level: log::Level) -> String {
+    let str_level = level.to_string();
     match level {
-        log::Level::Error => level.to_string().red().to_string(),
-        log::Level::Warn => level.to_string().bright_yellow().to_string(),
-        log::Level::Info => level.to_string().bright_green().to_string(),
-        log::Level::Debug => level.to_string().cyan().to_string(),
-        log::Level::Trace => level.to_string().bright_blue().to_string(),
+        log::Level::Error => str_level.red().to_string(),
+        log::Level::Warn => str_level.bright_yellow().to_string(),
+        log::Level::Info => str_level.bright_green().to_string(),
+        log::Level::Debug => str_level.cyan().to_string(),
+        log::Level::Trace => str_level.bright_blue().to_string(),
     }
 }
 
@@ -55,10 +59,7 @@ fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
         .format(move |out, message, record| {
             out.finish(format_args!(
                 "{date} {level} [{file} {target}] {message}",
-                date = chrono::Local::now()
-                    .format("%Y-%m-%d %H:%M:%S")
-                    .to_string()
-                    .green(),
+                date = Local::now().format(TIMESTAMP).to_string().green(),
                 target = record.target().to_string().bright_yellow(),
                 level = colour_level(record.level()),
                 file = format_args!(
@@ -72,7 +73,7 @@ fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
             ))
         })
         .level(get_log_level(opts))
-        .chain(std::io::stdout())
+        .chain(io::stdout())
 }
 
 fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
@@ -80,17 +81,14 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
         .format(move |out, message, record| {
             out.finish(format_args!(
                 "{date} {level} [{target}] {message}",
-                date = chrono::Local::now()
-                    .format("%Y-%m-%d %H:%M:%S")
-                    .to_string()
-                    .green(),
+                date = Local::now().format(TIMESTAMP).to_string().green(),
                 target = record.target().to_string().bright_yellow(),
                 level = colour_level(record.level()),
                 message = format_msg(message).bright_green(),
             ))
         })
         .level(get_log_level(opts))
-        .chain(std::io::stdout())
+        .chain(io::stdout())
 }
 /// Sets up a `fern::Dispatch` based upon the provided options.
 ///

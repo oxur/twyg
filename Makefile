@@ -1,6 +1,6 @@
 default: all
 
-all: deps build test demos
+all: deps build lint test demos
 
 auth:
 	@echo "Copy and paste the following in the terminal where you"

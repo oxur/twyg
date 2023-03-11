@@ -3,6 +3,7 @@ use confyg::Confygery;
 use serde::Deserialize;
 
 mod common;
+
 use common::demo;
 
 const CONFIG_FILE: &str = "examples/config.toml";

@@ -1,4 +1,5 @@
 use log;
+
 use twyg;
 
 pub fn logs_sample(opts: twyg::LoggerOpts) {
