@@ -102,7 +102,7 @@ Use with the [config][config] library is seamless:
 
 ## License
 
-Copyright © 2020-2023, Oxur Group
+Copyright © 2020-2024, Oxur Group
 
 Apache License, Version 2.0
 
