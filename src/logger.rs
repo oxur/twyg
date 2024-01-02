@@ -1,5 +1,4 @@
 use std::fmt::Arguments;
-use std::io;
 use std::str::FromStr;
 
 use chrono::Local;
@@ -73,7 +72,6 @@ fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
             ))
         })
         .level(get_log_level(opts))
-        .chain(io::stdout())
 }
 
 fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
@@ -88,7 +86,6 @@ fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
             ))
         })
         .level(get_log_level(opts))
-        .chain(io::stdout())
 }
 /// Sets up a `fern::Dispatch` based upon the provided options.
 ///
@@ -133,9 +130,13 @@ pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
     } else {
         get_logger(opts)
     };
-    logger = match &opts.file {
-        Some(f) => logger.chain(fern::log_file(f)?),
-        _ => logger,
+    logger = match opts.file.clone() {
+        Some(opt) => match opt.as_str() {
+            "stdout" => logger.chain(std::io::stdout()),
+            "stderr" => logger.chain(std::io::stderr()),
+            f => logger.chain(fern::log_file(f)?),
+        },
+        _ => logger.chain(std::io::stdout()),
     };
     match logger.apply() {
         Ok(_) => Ok(()),

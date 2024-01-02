@@ -33,6 +33,7 @@ examples:
 	@cargo run --example=no-colour
 	@cargo run --example=from-config
 	@cargo run --example=from-confyg
+	@cargo run --example=stderr
 
 demos: examples
 

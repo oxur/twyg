@@ -2,7 +2,7 @@
 name = "twyg"
 description = "A tiny logging setup for Rust applications"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 license = "Apache-2.0"
 authors = ["Duncan McGreggor <oubiwann@gmail.com>"]
 repository = "https://github.com/oxur/twyg"
@@ -19,13 +19,13 @@ name = "twyg"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 fern = { version = "0.6", features = ["colored"] }
 log = "0.4"
-owo-colors = "3.5.0"
+owo-colors = "4.0.0"
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 anyhow = "1.0"
-config = { version = "0.13.2", default-features = false, features = [ "yaml" ] }
-confyg = "0.1.4"
+config = { version = "0.13.2", default-features = false, features = ["yaml"] }
+confyg = "0.2.0"
 
 [[example]]
 name = "colour-caller"
@@ -41,3 +41,6 @@ name = "from-config"
 
 [[example]]
 name = "from-confyg"
+
+[[example]]
+name = "stderr"
