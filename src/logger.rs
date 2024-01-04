@@ -111,7 +111,7 @@ fn report_caller_logger(date: String, filter: LevelFilter, stream: Stream) -> fe
                     .target()
                     .to_string()
                     .if_supports_color(stream, |x| x.bright_yellow()),
-                format_msg(message).if_supports_color(stream, |x| x.bright_green())
+                format_msg(message, stream).if_supports_color(stream, |x| x.bright_green())
             ))
         })
         .level(filter)
@@ -128,7 +128,7 @@ fn logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
                     .target()
                     .to_string()
                     .if_supports_color(stream, |x| x.bright_yellow()),
-                format_msg(message).if_supports_color(stream, |x| x.bright_green())
+                format_msg(message, stream).if_supports_color(stream, |x| x.bright_green())
             ))
         })
         .level(filter)
@@ -148,8 +148,10 @@ fn get_opt_u32(x: Option<u32>) -> String {
     }
 }
 
-fn format_msg(msg: &Arguments<'_>) -> String {
-    format!("{} {}", "▶".cyan(), msg).green().to_string()
+fn format_msg(msg: &Arguments<'_>, stream: Stream) -> String {
+    format!("{} {}", "▶".if_supports_color(stream, |x| x.cyan()), msg)
+        .if_supports_color(stream, |x| x.green())
+        .to_string()
 }
 
 fn colour_level(level: Level, stream: Stream) -> String {
