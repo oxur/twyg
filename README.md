@@ -86,7 +86,7 @@ Use with the [config][config] library is seamless:
     #[derive(Debug, Deserialize)]
     pub struct YourAppConfig {
         ...
-        pub logging: twyg::LoggerOpts,
+        pub logging: twyg::Opts,
         ...
     }
     ```
@@ -101,7 +101,7 @@ Use with the [config][config] library is seamless:
 1. Pass the logging config to twyg:
 
     ```rust
-    match twyg::setup_logger(&cfg.logging) {
+    match twyg::setup(&cfg.logging) {
         Ok(_) => {}
         Err(error) => panic!("Could not setup logger: {error:?}"),
     };
