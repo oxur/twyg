@@ -1,27 +1,110 @@
 use std::fmt::Arguments;
 use std::str::FromStr;
 
+use anyhow::{anyhow, Error, Result};
 use chrono::Local;
-use fern::InitError;
-use log;
+use log::{self, Level, LevelFilter};
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
-const TIMESTAMP: &str = "%Y-%m-%d %H:%M:%S";
+use super::opts::{self, Opts};
 
-/// A reference to the `LoggerOpts` struct is required as an argument to
-/// the `setup_logger` function.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct LoggerOpts {
-    pub coloured: bool,
-    pub file: Option<String>,
-    pub level: String,
-    pub report_caller: bool,
+pub struct Logger {
+    opts: Opts,
 }
 
-fn get_log_level(opts: &LoggerOpts) -> log::LevelFilter {
-    let level = log::LevelFilter::from_str(&opts.level);
-    level.unwrap()
+impl Logger {
+    pub fn new(opts: Opts) -> Logger {
+        owo_colors::set_override(opts.coloured);
+        Logger { opts }
+    }
+
+    pub fn dispatch(&self) -> Result<fern::Dispatch, Error> {
+        let mut dispatch = if self.opts.report_caller {
+            report_caller_logger(self.format_ts(), self.level_to_filter().unwrap())
+        } else {
+            logger(self.format_ts(), self.level_to_filter().unwrap())
+        };
+        dispatch = match self.opts.file.clone() {
+            Some(opt) => match opt.as_str() {
+                opts::STDOUT => dispatch.chain(std::io::stdout()),
+                opts::STDERR => dispatch.chain(std::io::stderr()),
+                f => dispatch.chain(fern::log_file(f)?),
+            },
+            _ => dispatch.chain(std::io::stdout()),
+        };
+        Ok(dispatch)
+    }
+
+    // Private methods
+
+    fn format_ts(&self) -> String {
+        let ts = match &self.opts.time_format {
+            None => opts::default_ts_format().unwrap(),
+            Some(ts) => ts.to_string(),
+        };
+        Local::now().format(ts.as_str()).to_string()
+    }
+
+    pub fn level(&self) -> String {
+        let ts = match &self.opts.level {
+            None => opts::default_level().unwrap(),
+            Some(l) => l.to_string(),
+        };
+        Local::now().format(ts.as_str()).to_string()
+    }
+
+    fn level_to_filter(&self) -> Result<LevelFilter, Error> {
+        let level = match &self.opts.level {
+            None => opts::default_level().unwrap(),
+            Some(l) => l.to_string(),
+        };
+        match LevelFilter::from_str(level.as_str()) {
+            Ok(lf) => Ok(lf),
+            Err(e) => Err(anyhow!(
+                "couldn't convert log level String to LevelFilter ({:})",
+                e
+            )),
+        }
+    }
+}
+
+// Private functions
+
+fn report_caller_logger(date: String, filter: LevelFilter) -> fern::Dispatch {
+    fern::Dispatch::new()
+        .format(move |out, message, record| {
+            out.finish(format_args!(
+                "{date} {level} [{file} {target}] {message}",
+                date = date.green(),
+                target = record.target().to_string().bright_yellow(),
+                level = colour_level(record.level()),
+                file = format_args!(
+                    "{}:{}",
+                    get_opt_str(record.file()),
+                    get_opt_u32(record.line()),
+                )
+                .to_string()
+                .yellow(),
+                message = format_msg(message).bright_green(),
+            ))
+        })
+        .level(filter)
+}
+
+fn logger(date: String, filter: LevelFilter) -> fern::Dispatch {
+    fern::Dispatch::new()
+        .format(move |out, message, record| {
+            out.finish(format_args!(
+                "{date} {level} [{target}] {message}",
+                date = date.green(),
+                target = record.target().to_string().bright_yellow(),
+                level = colour_level(record.level()),
+                message = format_msg(message).bright_green(),
+            ))
+        })
+        .level(filter)
 }
 
 fn get_opt_str(x: Option<&str>) -> String {
@@ -38,111 +121,17 @@ fn get_opt_u32(x: Option<u32>) -> String {
     }
 }
 
-fn colour_level(level: log::Level) -> String {
-    let str_level = level.to_string();
-    match level {
-        log::Level::Error => str_level.red().to_string(),
-        log::Level::Warn => str_level.bright_yellow().to_string(),
-        log::Level::Info => str_level.bright_green().to_string(),
-        log::Level::Debug => str_level.cyan().to_string(),
-        log::Level::Trace => str_level.bright_blue().to_string(),
-    }
-}
-
 fn format_msg(msg: &Arguments<'_>) -> String {
     format!("{} {}", "▶".cyan(), msg).green().to_string()
 }
 
-fn get_report_caller_logger(opts: &LoggerOpts) -> fern::Dispatch {
-    fern::Dispatch::new()
-        .format(move |out, message, record| {
-            out.finish(format_args!(
-                "{date} {level} [{file} {target}] {message}",
-                date = Local::now().format(TIMESTAMP).to_string().green(),
-                target = record.target().to_string().bright_yellow(),
-                level = colour_level(record.level()),
-                file = format_args!(
-                    "{}:{}",
-                    get_opt_str(record.file()),
-                    get_opt_u32(record.line()),
-                )
-                .to_string()
-                .yellow(),
-                message = format_msg(message).bright_green(),
-            ))
-        })
-        .level(get_log_level(opts))
-}
-
-fn get_logger(opts: &LoggerOpts) -> fern::Dispatch {
-    fern::Dispatch::new()
-        .format(move |out, message, record| {
-            out.finish(format_args!(
-                "{date} {level} [{target}] {message}",
-                date = Local::now().format(TIMESTAMP).to_string().green(),
-                target = record.target().to_string().bright_yellow(),
-                level = colour_level(record.level()),
-                message = format_msg(message).bright_green(),
-            ))
-        })
-        .level(get_log_level(opts))
-}
-/// Sets up a `fern::Dispatch` based upon the provided options.
-///
-/// The options (see the `twyg::LoggerOpts` struct) require that all of the
-/// following fields be set:
-///
-/// * `coloured`: setting to false will disable ANIS colors in the logging output
-/// * `file`: provide a path to a file, and output will be logged there too
-/// * `level`: case-insensitive logging level
-/// * `report_caller`: setting to true will output the filename and line number
-///    where the logging call was made
-///
-/// With the options set, next call the setup function, passing a reference to
-/// the opts as as the sole argument.
-///
-/// Usage example:
-///
-/// ```rust
-/// use twyg;
-///
-/// let opts = twyg::LoggerOpts{
-///     coloured: true,
-///     file: None,
-///     level: String::from("debug"),
-///     report_caller: true,
-/// };
-///
-/// match twyg::setup_logger(&opts) {
-///     Ok(_) => {},
-///     Err(e) => {
-///         panic!("Could not setup logger: {e:?}")
-///     },
-/// };
-/// ```
-///
-/// At which point, calls to the `log::*!` macros will be displayed and
-/// formatted according to your configuration and twyg.
-///
-pub fn setup_logger(opts: &LoggerOpts) -> Result<(), InitError> {
-    let mut logger = if opts.report_caller {
-        get_report_caller_logger(opts)
-    } else {
-        get_logger(opts)
-    };
-    logger = match opts.file.clone() {
-        Some(opt) => match opt.as_str() {
-            "stdout" => logger.chain(std::io::stdout()),
-            "stderr" => logger.chain(std::io::stderr()),
-            f => logger.chain(fern::log_file(f)?),
-        },
-        _ => logger.chain(std::io::stdout()),
-    };
-    match logger.apply() {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            log::warn!("{e}");
-            Ok(())
-        }
+fn colour_level(level: Level) -> String {
+    let s_level = level.to_string();
+    match level {
+        Level::Error => s_level.red().to_string(),
+        Level::Warn => s_level.bright_yellow().to_string(),
+        Level::Info => s_level.bright_green().to_string(),
+        Level::Debug => s_level.cyan().to_string(),
+        Level::Trace => s_level.bright_blue().to_string(),
     }
 }

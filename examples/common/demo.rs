@@ -1,9 +1,9 @@
 use log;
 
-use twyg;
+use twyg::{self, Opts};
 
-pub fn logs_sample(opts: twyg::LoggerOpts) {
-    match twyg::setup_logger(&opts) {
+pub fn logs_sample(opts: Opts) {
+    match twyg::setup(opts.clone()) {
         Ok(_) => {}
         Err(error) => panic!("Could not setup logger: {error:?}"),
     };

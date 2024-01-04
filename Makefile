@@ -28,12 +28,25 @@ test:
 	@cargo test
 
 examples:
+	@echo
+	@echo ">>> With Colour & Caller <<<"
 	@cargo run --example=colour-caller
+	@echo
+	@echo ">>> Without Caller <<<"
 	@cargo run --example=no-caller
+	@echo
+	@echo ">>> Without Colour <<<"
 	@cargo run --example=no-colour
+	@echo
+	@echo ">>> From Config <<<"
 	@cargo run --example=from-config
+	@echo
+	@echo ">>> From Config (using confyg library) <<<"
 	@cargo run --example=from-confyg
+	@echo
+	@echo ">>> To stderr <<<"
 	@cargo run --example=stderr
+	@echo
 
 demos: examples
 

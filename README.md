@@ -13,30 +13,37 @@ I got used to logging my apps in Clojure with [Twig](https://github.com/clojusc/
 in LFE with [Logjam](https://github.com/lfex/logjam), and in Go with
 [zylog](https://github.com/geomyidia/zylog), so here's something similar for Rust.
 
+Version warnings:
+
+* v0.3 - A regression was introduced due to the move away from the unsupported (and insecure) `colors` library whereby one could no longer disable ANSI colour of logged output.
+* v0.4 - Due to the more complex nature of `OwoColors`, a major code refactor was required to fix the colour regression of v0.3, and as part of that several breaking changes were introduced, including a `struct` raname, new fields, etc.
+
 ## Usage
 
 First, update your `Cargo.toml`s dependencies section:
 
 ```toml
 [dependencies]
-twyg = "0.3"
+twyg = "0.4"
 ```
 
 I like to put my logging setup in YAML config files for my apps, but however
 you prefer to store your config, you'll next need to populate the
-`twyg::LoggerOpts` struct for your preferred mechanism:
+`twyg::Opts` struct for your preferred mechanism:
 
 ```rust
 use twyg;
 
-let opts = twyg::LoggerOpts{
+let opts = twyg::Opts{
     coloured: true,
     file: None,
     level: String::from("debug"),
     report_caller: true,
+
+    ..Default::default()
 };
 
-match twyg::setup_logger(&opts) {
+match twyg::setup(&opts) {
     Ok(_) => {},
     Err(error) => {
         panic!("Could not setup logger: {:?}", error)

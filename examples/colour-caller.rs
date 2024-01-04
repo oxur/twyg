@@ -1,13 +1,17 @@
 mod common;
 
+use twyg::Opts;
+
 use common::demo;
 
 fn main() {
-    let opts = twyg::LoggerOpts {
+    let opts = Opts {
         coloured: true,
         file: None,
-        level: String::from("trace"),
+        level: Some(String::from("trace")),
         report_caller: true,
+
+        ..Default::default()
     };
     demo::logs_sample(opts);
 }

@@ -1,8 +1,10 @@
+mod common;
+
 use anyhow::Result;
 use confyg::Confygery;
 use serde::Deserialize;
 
-mod common;
+use twyg::Opts;
 
 use common::demo;
 
@@ -10,7 +12,7 @@ const CONFIG_FILE: &str = "examples/config.toml";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
-    pub logging: twyg::LoggerOpts,
+    pub logging: Opts,
 }
 
 fn main() -> Result<()> {

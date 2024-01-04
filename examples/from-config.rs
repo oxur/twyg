@@ -2,11 +2,13 @@ use anyhow::{anyhow, Error, Result};
 use config as cfglib;
 use serde::Deserialize;
 
+use twyg::Opts;
+
 const CONFIG_FILE: &str = "examples/config.yml";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
-    pub logging: twyg::LoggerOpts,
+    pub logging: Opts,
 }
 
 impl AppConfig {
