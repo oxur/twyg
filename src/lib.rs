@@ -33,7 +33,7 @@ pub use opts::Opts;
 ///     ..Default::default()
 /// };
 ///
-/// match twyg::setup(&opts) {
+/// match twyg::setup(opts) {
 ///     Ok(_) => {},
 ///     Err(e) => {
 ///         panic!("Could not setup logger: {e:?}")
