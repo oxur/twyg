@@ -82,9 +82,9 @@ impl Logger {
             None => Stream::Stdout,
             Some(s) => {
                 if s.as_str() == opts::STDERR {
-                    return Stream::Stderr;
+                    Stream::Stderr
                 } else {
-                    return Stream::Stdout;
+                    Stream::Stdout
                 }
             }
         }
