@@ -2,8 +2,9 @@ pub mod logger;
 pub mod opts;
 
 use anyhow::{anyhow, Error, Result};
+
 use logger::Logger;
-pub use opts::Opts;
+pub use opts::{Opts, STDERR, STDOUT};
 
 /// Sets up a `fern::Dispatch` based upon the provided options.
 ///
