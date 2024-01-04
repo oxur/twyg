@@ -4,7 +4,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Error, Result};
 use chrono::Local;
 use log::{self, Level, LevelFilter};
-use owo_colors::OwoColorize;
+use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 
 use super::opts::{self, Opts};
@@ -22,9 +22,17 @@ impl Logger {
 
     pub fn dispatch(&self) -> Result<fern::Dispatch, Error> {
         let mut dispatch = if self.opts.report_caller {
-            report_caller_logger(self.format_ts(), self.level_to_filter().unwrap())
+            report_caller_logger(
+                self.format_ts(),
+                self.level_to_filter().unwrap(),
+                self.stream(),
+            )
         } else {
-            logger(self.format_ts(), self.level_to_filter().unwrap())
+            logger(
+                self.format_ts(),
+                self.level_to_filter().unwrap(),
+                self.stream(),
+            )
         };
         dispatch = match self.opts.file.clone() {
             Some(opt) => match opt.as_str() {
@@ -68,40 +76,59 @@ impl Logger {
             )),
         }
     }
+
+    fn stream(&self) -> Stream {
+        match self.opts.clone().file {
+            None => Stream::Stdout,
+            Some(s) => {
+                if s.as_str() == opts::STDERR {
+                    return Stream::Stderr;
+                } else {
+                    return Stream::Stdout;
+                }
+            }
+        }
+    }
 }
 
 // Private functions
 
-fn report_caller_logger(date: String, filter: LevelFilter) -> fern::Dispatch {
+fn report_caller_logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
-                "{date} {level} [{file} {target}] {message}",
-                date = date.green(),
-                target = record.target().to_string().bright_yellow(),
-                level = colour_level(record.level()),
-                file = format_args!(
+                "{} {} [{} {}] {}",
+                date.if_supports_color(stream, |x| x.green()),
+                colour_level(record.level(), stream),
+                format_args!(
                     "{}:{}",
                     get_opt_str(record.file()),
                     get_opt_u32(record.line()),
                 )
                 .to_string()
-                .yellow(),
-                message = format_msg(message).bright_green(),
+                .if_supports_color(stream, |x| x.bright_yellow()),
+                record
+                    .target()
+                    .to_string()
+                    .if_supports_color(stream, |x| x.bright_yellow()),
+                format_msg(message).if_supports_color(stream, |x| x.bright_green())
             ))
         })
         .level(filter)
 }
 
-fn logger(date: String, filter: LevelFilter) -> fern::Dispatch {
+fn logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
-                "{date} {level} [{target}] {message}",
-                date = date.green(),
-                target = record.target().to_string().bright_yellow(),
-                level = colour_level(record.level()),
-                message = format_msg(message).bright_green(),
+                "{} {} [{}] {}",
+                date.if_supports_color(stream, |x| x.green()),
+                colour_level(record.level(), stream),
+                record
+                    .target()
+                    .to_string()
+                    .if_supports_color(stream, |x| x.bright_yellow()),
+                format_msg(message).if_supports_color(stream, |x| x.bright_green())
             ))
         })
         .level(filter)
@@ -125,13 +152,19 @@ fn format_msg(msg: &Arguments<'_>) -> String {
     format!("{} {}", "▶".cyan(), msg).green().to_string()
 }
 
-fn colour_level(level: Level) -> String {
+fn colour_level(level: Level, stream: Stream) -> String {
     let s_level = level.to_string();
     match level {
-        Level::Error => s_level.red().to_string(),
-        Level::Warn => s_level.bright_yellow().to_string(),
-        Level::Info => s_level.bright_green().to_string(),
-        Level::Debug => s_level.cyan().to_string(),
-        Level::Trace => s_level.bright_blue().to_string(),
+        Level::Error => s_level.if_supports_color(stream, |x| x.red()).to_string(),
+        Level::Warn => s_level
+            .if_supports_color(stream, |x| x.bright_yellow())
+            .to_string(),
+        Level::Info => s_level
+            .if_supports_color(stream, |x| x.bright_green())
+            .to_string(),
+        Level::Debug => s_level.if_supports_color(stream, |x| x.cyan()).to_string(),
+        Level::Trace => s_level
+            .if_supports_color(stream, |x| x.bright_blue())
+            .to_string(),
     }
 }
