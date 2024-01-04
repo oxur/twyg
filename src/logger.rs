@@ -8,6 +8,7 @@ use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 
 use super::opts::{self, Opts};
+use super::out;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Logger {
@@ -36,8 +37,8 @@ impl Logger {
         };
         dispatch = match self.opts.file.clone() {
             Some(opt) => match opt.as_str() {
-                opts::STDOUT => dispatch.chain(std::io::stdout()),
-                opts::STDERR => dispatch.chain(std::io::stderr()),
+                out::STDOUT => dispatch.chain(std::io::stdout()),
+                out::STDERR => dispatch.chain(std::io::stderr()),
                 f => dispatch.chain(fern::log_file(f)?),
             },
             _ => dispatch.chain(std::io::stdout()),
@@ -81,7 +82,7 @@ impl Logger {
         match self.opts.clone().file {
             None => Stream::Stdout,
             Some(s) => {
-                if s.as_str() == opts::STDERR {
+                if s.as_str() == out::STDERR {
                     Stream::Stderr
                 } else {
                     Stream::Stdout

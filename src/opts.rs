@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-pub const STDOUT: &str = "stdout";
-pub const STDERR: &str = "stderr";
+use super::out;
+
 const DEFAULT_LEVEL: &str = "error";
 const DEFAULT_TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
@@ -31,7 +31,7 @@ impl Opts {
 }
 
 pub fn default_file() -> Option<String> {
-    Some(STDOUT.to_string())
+    Some(out::STDOUT.to_string())
 }
 
 pub fn default_level() -> Option<String> {

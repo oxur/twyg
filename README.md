@@ -36,7 +36,6 @@ use twyg;
 
 let opts = twyg::Opts{
     coloured: true,
-    file: None,
     level: String::from("debug"),
     report_caller: true,
 

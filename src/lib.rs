@@ -1,10 +1,13 @@
+pub mod level;
 pub mod logger;
 pub mod opts;
+pub mod out;
 
 use anyhow::{anyhow, Error, Result};
 
 use logger::Logger;
-pub use opts::{Opts, STDERR, STDOUT};
+pub use opts::Opts;
+pub use out::{STDERR, STDOUT};
 
 /// Sets up a `fern::Dispatch` based upon the provided options.
 ///
@@ -27,7 +30,6 @@ pub use opts::{Opts, STDERR, STDOUT};
 ///
 /// let opts = twyg::Opts{
 ///     coloured: true,
-///     file: None,
 ///     level: Some(String::from("debug")),
 ///     report_caller: true,
 ///
