@@ -26,11 +26,11 @@ pub use out::{STDERR, STDOUT};
 /// Usage example:
 ///
 /// ```rust
-/// use twyg;
+/// use twyg::{self, level};
 ///
 /// let opts = twyg::Opts{
 ///     coloured: true,
-///     level: Some(String::from("debug")),
+///     level: level::debug(),
 ///     report_caller: true,
 ///
 ///     ..Default::default()

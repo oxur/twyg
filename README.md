@@ -32,11 +32,11 @@ you prefer to store your config, you'll next need to populate the
 `twyg::Opts` struct for your preferred mechanism:
 
 ```rust
-use twyg;
+use twyg::{self, level};
 
 let opts = twyg::Opts{
     coloured: true,
-    level: String::from("debug"),
+    level: level::debug(),
     report_caller: true,
 
     ..Default::default()
