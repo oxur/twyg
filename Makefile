@@ -21,7 +21,6 @@ cicd-lint:
 	@cargo clippy --all-targets --all-features -- --no-deps -D clippy::all
 
 check:
-	@cargo deny check
 	@cargo +nightly udeps
 
 test:
@@ -58,14 +57,6 @@ publish:
 
 nightly:
 	@rustup toolchain install nightly
-
-install-cargo-deny:
-	@echo ">> Installing cargo deny ..."
-	@cargo install --locked cargo-deny
-
-setup-cargo-deny: install-cargo-deny
-	@echo ">> Setting up cargo deny ..."
-	@cargo deny init
 
 install-udeps:
 	@echo ">> Setting up cargo udeps ..."
