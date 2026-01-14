@@ -1,14 +1,14 @@
 mod common;
 
-use twyg::{level, out, Opts};
+use twyg::{LogLevel, Opts, Output};
 
 use common::demo;
 
 fn main() {
     let opts = Opts {
         coloured: true,
-        file: out::stderr(),
-        level: level::trace(),
+        output: Output::Stderr,
+        level: LogLevel::Trace,
         report_caller: true,
 
         ..Default::default()

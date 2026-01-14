@@ -1,14 +1,20 @@
-use std::fmt::Arguments;
-use std::str::FromStr;
+//! Logger implementation using fern.
+//!
+//! This module provides the [`Logger`] struct that wraps fern configuration.
 
-use anyhow::{anyhow, Error, Result};
+use std::fmt::Arguments;
+
+use anyhow::{Error, Result};
 use chrono::Local;
-use log::{self, Level, LevelFilter};
+use log::{Level, LevelFilter};
 use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 
-use super::opts::{self, Opts};
-use super::out;
+use super::level::LogLevel;
+use super::opts::Opts;
+use super::output::Output;
+
+const DEFAULT_TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Logger {
@@ -22,73 +28,43 @@ impl Logger {
     }
 
     pub fn dispatch(&self) -> Result<fern::Dispatch, Error> {
+        let filter = self.level_to_filter();
         let mut dispatch = if self.opts.report_caller {
-            report_caller_logger(
-                self.format_ts(),
-                self.level_to_filter().unwrap(),
-                self.stream(),
-            )
+            report_caller_logger(self.format_ts(), filter, self.stream())
         } else {
-            logger(
-                self.format_ts(),
-                self.level_to_filter().unwrap(),
-                self.stream(),
-            )
+            logger(self.format_ts(), filter, self.stream())
         };
-        dispatch = match self.opts.file.clone() {
-            Some(opt) => match opt.as_str() {
-                out::STDOUT => dispatch.chain(std::io::stdout()),
-                out::STDERR => dispatch.chain(std::io::stderr()),
-                f => dispatch.chain(fern::log_file(f)?),
-            },
-            _ => dispatch.chain(std::io::stdout()),
+
+        dispatch = match &self.opts.output {
+            Output::Stdout => dispatch.chain(std::io::stdout()),
+            Output::Stderr => dispatch.chain(std::io::stderr()),
+            Output::File(path) => dispatch.chain(fern::log_file(path)?),
         };
+
         Ok(dispatch)
     }
 
     // Private methods
 
     fn format_ts(&self) -> String {
-        let ts = match &self.opts.time_format {
-            None => opts::default_ts_format().unwrap(),
-            Some(ts) => ts.to_string(),
-        };
-        Local::now().format(ts.as_str()).to_string()
+        let ts = self
+            .opts
+            .time_format
+            .as_deref()
+            .unwrap_or(DEFAULT_TS_FORMAT);
+        Local::now().format(ts).to_string()
     }
 
-    pub fn level(&self) -> String {
-        let ts = match &self.opts.level {
-            None => opts::default_level().unwrap(),
-            Some(l) => l.to_string(),
-        };
-        Local::now().format(ts.as_str()).to_string()
+    pub fn level(&self) -> LogLevel {
+        self.opts.level
     }
 
-    fn level_to_filter(&self) -> Result<LevelFilter, Error> {
-        let level = match &self.opts.level {
-            None => opts::default_level().unwrap(),
-            Some(l) => l.to_string(),
-        };
-        match LevelFilter::from_str(level.as_str()) {
-            Ok(lf) => Ok(lf),
-            Err(e) => Err(anyhow!(
-                "couldn't convert log level String to LevelFilter ({:})",
-                e
-            )),
-        }
+    fn level_to_filter(&self) -> LevelFilter {
+        self.opts.level.into()
     }
 
     fn stream(&self) -> Stream {
-        match self.opts.clone().file {
-            None => Stream::Stdout,
-            Some(s) => {
-                if s.as_str() == out::STDERR {
-                    Stream::Stderr
-                } else {
-                    Stream::Stdout
-                }
-            }
-        }
+        Stream::from(&self.opts.output)
     }
 }
 
@@ -103,8 +79,8 @@ fn report_caller_logger(date: String, filter: LevelFilter, stream: Stream) -> fe
                 colour_level(record.level(), stream),
                 format_args!(
                     "{}:{}",
-                    get_opt_str(record.file()),
-                    get_opt_u32(record.line()),
+                    opt_str_or_placeholder(record.file()),
+                    opt_u32_or_placeholder(record.line()),
                 )
                 .to_string()
                 .if_supports_color(stream, |x| x.bright_yellow()),
@@ -135,14 +111,11 @@ fn logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
         .level(filter)
 }
 
-fn get_opt_str(x: Option<&str>) -> String {
-    match x {
-        None => "??".to_string(),
-        Some(_) => x.unwrap().to_string(),
-    }
+fn opt_str_or_placeholder(x: Option<&str>) -> &str {
+    x.unwrap_or("??")
 }
 
-fn get_opt_u32(x: Option<u32>) -> String {
+fn opt_u32_or_placeholder(x: Option<u32>) -> String {
     match x {
         None => "??".to_string(),
         Some(val) => val.to_string(),
@@ -169,5 +142,196 @@ fn colour_level(level: Level, stream: Stream) -> String {
         Level::Trace => s_level
             .if_supports_color(stream, |x| x.bright_blue())
             .to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_logger_new() {
+        let opts = Opts::default();
+        let logger = Logger::new(opts.clone());
+        assert_eq!(logger.opts.coloured, opts.coloured);
+    }
+
+    #[test]
+    fn test_logger_clone() {
+        let opts = Opts::default();
+        let logger1 = Logger::new(opts);
+        let logger2 = logger1.clone();
+        assert_eq!(logger1.opts.coloured, logger2.opts.coloured);
+    }
+
+    #[test]
+    fn test_logger_debug() {
+        let opts = Opts::default();
+        let logger = Logger::new(opts);
+        let debug_str = format!("{:?}", logger);
+        assert!(debug_str.contains("Logger"));
+    }
+
+    #[test]
+    fn test_format_ts() {
+        let opts = Opts {
+            time_format: Some("%Y-%m-%d".to_string()),
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let ts = logger.format_ts();
+        // Should be in YYYY-MM-DD format
+        assert!(ts.len() >= 10);
+        assert!(ts.contains('-'));
+    }
+
+    #[test]
+    fn test_format_ts_with_default() {
+        let opts = Opts::default();
+        let logger = Logger::new(opts);
+        let ts = logger.format_ts();
+        // Should use default format
+        assert!(!ts.is_empty());
+    }
+
+    #[test]
+    fn test_stream_stdout() {
+        let opts = Opts {
+            output: Output::Stdout,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let stream = logger.stream();
+        match stream {
+            Stream::Stdout => {}
+            _ => panic!("Expected Stream::Stdout"),
+        }
+    }
+
+    #[test]
+    fn test_stream_stderr() {
+        let opts = Opts {
+            output: Output::Stderr,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let stream = logger.stream();
+        match stream {
+            Stream::Stderr => {}
+            _ => panic!("Expected Stream::Stderr"),
+        }
+    }
+
+    #[test]
+    fn test_stream_file_uses_stdout() {
+        let opts = Opts {
+            output: Output::file("/tmp/test.log"),
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let stream = logger.stream();
+        match stream {
+            Stream::Stdout => {}
+            _ => panic!("Expected Stream::Stdout for file output"),
+        }
+    }
+
+    #[test]
+    fn test_opt_str_or_placeholder_with_some() {
+        let result = opt_str_or_placeholder(Some("test"));
+        assert_eq!(result, "test");
+    }
+
+    #[test]
+    fn test_opt_str_or_placeholder_with_none() {
+        let result = opt_str_or_placeholder(None);
+        assert_eq!(result, "??");
+    }
+
+    #[test]
+    fn test_opt_u32_or_placeholder_with_some() {
+        let result = opt_u32_or_placeholder(Some(42));
+        assert_eq!(result, "42");
+    }
+
+    #[test]
+    fn test_opt_u32_or_placeholder_with_none() {
+        let result = opt_u32_or_placeholder(None);
+        assert_eq!(result, "??");
+    }
+
+    #[test]
+    fn test_colour_level_error() {
+        let colored = colour_level(Level::Error, Stream::Stdout);
+        assert!(colored.contains("ERROR") || colored.contains("error"));
+    }
+
+    #[test]
+    fn test_colour_level_warn() {
+        let colored = colour_level(Level::Warn, Stream::Stdout);
+        assert!(colored.contains("WARN") || colored.contains("warn"));
+    }
+
+    #[test]
+    fn test_colour_level_info() {
+        let colored = colour_level(Level::Info, Stream::Stdout);
+        assert!(colored.contains("INFO") || colored.contains("info"));
+    }
+
+    #[test]
+    fn test_colour_level_debug() {
+        let colored = colour_level(Level::Debug, Stream::Stdout);
+        assert!(colored.contains("DEBUG") || colored.contains("debug"));
+    }
+
+    #[test]
+    fn test_colour_level_trace() {
+        let colored = colour_level(Level::Trace, Stream::Stdout);
+        assert!(colored.contains("TRACE") || colored.contains("trace"));
+    }
+
+    #[test]
+    fn test_format_msg() {
+        let args = format_args!("test message");
+        let result = format_msg(&args, Stream::Stdout);
+        assert!(result.contains("▶"));
+        assert!(result.contains("test message"));
+    }
+
+    #[test]
+    fn test_logger_serialize_deserialize() {
+        let opts = Opts {
+            coloured: true,
+            level: LogLevel::Debug,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+
+        let serialized = serde_json::to_string(&logger).unwrap();
+        let deserialized: Logger = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(logger.opts.coloured, deserialized.opts.coloured);
+        assert_eq!(logger.opts.level, deserialized.opts.level);
+    }
+
+    #[test]
+    fn test_level_to_filter() {
+        let opts = Opts {
+            level: LogLevel::Debug,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let filter = logger.level_to_filter();
+        assert_eq!(filter, LevelFilter::Debug);
+    }
+
+    #[test]
+    fn test_level() {
+        let opts = Opts {
+            level: LogLevel::Info,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        assert_eq!(logger.level(), LogLevel::Info);
     }
 }

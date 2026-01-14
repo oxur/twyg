@@ -1,13 +1,13 @@
 mod common;
 
-use twyg::{level, Opts};
+use twyg::{LogLevel, Opts};
 
 use common::demo;
 
 fn main() {
     let opts = Opts {
         coloured: false,
-        level: level::trace(),
+        level: LogLevel::Trace,
         report_caller: false,
 
         ..Default::default()

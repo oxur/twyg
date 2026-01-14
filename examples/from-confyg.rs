@@ -16,7 +16,7 @@ pub struct AppConfig {
 }
 
 fn main() -> Result<()> {
-    let cfg: AppConfig = Confygery::new().add_file(CONFIG_FILE).build()?;
+    let cfg: AppConfig = Confygery::new()?.add_file(CONFIG_FILE)?.build()?;
     demo::logs_sample(cfg.logging);
     Ok(())
 }
