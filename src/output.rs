@@ -281,7 +281,10 @@ mod tests {
     fn test_output_as_str() {
         assert_eq!(Output::Stdout.as_str(), "stdout");
         assert_eq!(Output::Stderr.as_str(), "stderr");
-        assert_eq!(Output::File(PathBuf::from("/tmp/test.log")).as_str(), "file");
+        assert_eq!(
+            Output::File(PathBuf::from("/tmp/test.log")).as_str(),
+            "file"
+        );
     }
 
     // Test backwards compatibility
