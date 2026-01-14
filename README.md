@@ -9,14 +9,18 @@
 
 *A tiny logging setup for Rust applications*
 
-I got used to logging my apps in Clojure with [Twig](https://github.com/clojusc/twig),
-in LFE with [Logjam](https://github.com/lfex/logjam), and in Go with
-[zylog](https://github.com/geomyidia/zylog), so here's something similar for Rust.
+I got used to logging my apps in with:
+
+* [Twig](https://github.com/clojusc/twig) (Clojure)
+* [Logjam](https://github.com/lfex/logjam) (LFE)
+* [zylog](https://github.com/zylisp/zylog) (Go)
+
+so here's something similar for Rust ;-)
 
 Version warnings:
 
-* v0.3 - A regression was introduced due to the move away from the unsupported (and insecure) `colors` library whereby one could no longer disable ANSI colour of logged output.
 * v0.4 - Due to the more complex nature of `OwoColors`, a major code refactor was required to fix the colour regression of v0.3, and as part of that several breaking changes were introduced, including a `struct` raname, new fields, etc.
+* v0.3 - A regression was introduced due to the move away from the unsupported (and insecure) `colors` library whereby one could no longer disable ANSI colour of logged output.
 
 ## Usage
 
@@ -24,7 +28,7 @@ First, update your `Cargo.toml`s dependencies section:
 
 ```toml
 [dependencies]
-twyg = "0.4"
+twyg = "0.5"
 ```
 
 I like to put my logging setup in YAML config files for my apps, but however
@@ -108,22 +112,22 @@ Use with the [config][config] library is seamless:
 
 ## License
 
-Copyright © 2020-2024, Oxur Group
+Copyright © 2020-2026, Oxur Group
 
 Apache License, Version 2.0
 
 [//]: ---Named-Links---
 
-[logo]: resources/images/logo-250x.png
-[logo-large]: resources/images/logo-1000x.png
-[screenshot-thumb]: resources/images/screenshot-thumb.jpg
-[screenshot]: https://raw.githubusercontent.com/oxur/twyg/main/resources/images/screenshot.png
-[build]: https://github.com/oxur/twyg/actions?query=workflow%3Abuild+
-[build-badge]: https://github.com/oxur/twyg/workflows/build/badge.svg
+[logo]: assets/images/logo-250x.png
+[logo-large]: assets/images/logo-1000x.png
+[screenshot-thumb]: assets/images/screenshot-thumb.jpg
+[screenshot]: https://raw.githubusercontent.com/oxur/twyg/main/assets/images/screenshot.png
+[config]: https://github.com/mehcode/config-rs
+[build]: https://github.com/oxur/twyg/actions/workflows/ci.yml
+[build-badge]: https://github.com/oxur/twyg/actions/workflows/ci.yml/badge.svg
 [crate]: https://crates.io/crates/twyg
 [crate-badge]: https://img.shields.io/crates/v/twyg.svg
 [docs]: https://docs.rs/twyg/
 [docs-badge]: https://img.shields.io/badge/rust-documentation-blue.svg
 [tag-badge]: https://img.shields.io/github/tag/oxur/twyg.svg
 [tag]: https://github.com/oxur/twyg/tags
-[config]: https://github.com/mehcode/config-rs

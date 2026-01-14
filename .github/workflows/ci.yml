@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, 'release/0.*' ]
+  pull_request:
+    branches: [ main, 'release/0.*' ]
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  ci:
+    name: ${{ matrix.check.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - name: Build
+            command: make build
+            components: ''
+          - name: Lint
+            command: make lint
+            components: clippy
+          - name: Test
+            command: make test
+            components: ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Clone oxur repo as sibling (needed for oxur-odm path dependency)
+      - name: Clone oxur repository
+        run: |
+          cd ..
+          git clone https://github.com/oxur/oxur.git oxur
+          ls -la
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: ${{ matrix.check.components }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run ${{ matrix.check.name }}
+        run: ${{ matrix.check.command }}
+

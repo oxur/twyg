@@ -2,30 +2,30 @@
 name = "twyg"
 description = "A tiny logging setup for Rust applications"
 readme = "README.md"
-version = "0.4.1"
+version = "0.5.0"
 license = "Apache-2.0"
 authors = ["Duncan McGreggor <oubiwann@gmail.com>"]
 repository = "https://github.com/oxur/twyg"
 documentation = "https://docs.rs/twyg/"
 categories = ["development-tools", "value-formatting"]
 keywords = ["logging", "loggers", "formatting"]
-exclude = ["/.github", "/resources", ".gitignore"]
+exclude = ["/.github", "/assets", ".gitignore"]
 edition = "2021"
 
 [lib]
 name = "twyg"
 
 [dependencies]
-anyhow = "1.0"
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
-fern = { version = "0.6", features = ["colored"] }
-log = "0.4"
-owo-colors = { version = "4.0.0", features = ["supports-colors"] }
-serde = { version = "1.0", features = ["derive"] }
+anyhow = "1.0.100"
+chrono = { version = "0.4.42", default-features = false, features = ["clock"] }
+fern = { version = "0.7.1", features = ["colored"] }
+log = "0.4.29"
+owo-colors = { version = "4.2.3", features = ["supports-colors"] }
+serde = { version = "1.0.228", features = ["derive"] }
 
 [dev-dependencies]
-config = { version = "0.13.2", default-features = false, features = ["yaml"] }
-confyg = "0.2.0"
+config = { version = "0.15.19", default-features = false, features = ["yaml"] }
+confyg = "0.3.0"
 
 [[example]]
 name = "colour-caller"
