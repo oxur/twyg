@@ -1,12 +1,31 @@
+use log::{debug, error, info, trace, warn};
 use twyg::{LogLevel, Logger, Opts, Output};
 
-/// Test that setup works with default options.
+/// Test that setup works with default options and actually write log messages
+/// to exercise the formatting closures.
 /// This is the only test that actually initializes the global logger.
 #[test]
 fn test_setup_with_defaults() {
-    let opts = Opts::default();
+    let opts = Opts {
+        level: LogLevel::Trace,
+        report_caller: true,
+        coloured: false,
+        ..Default::default()
+    };
     let result = twyg::setup(opts);
     assert!(result.is_ok());
+
+    // Write log messages at all levels to exercise the formatting closures
+    trace!("This is a trace message");
+    debug!("This is a debug message");
+    info!("This is an info message");
+    warn!("This is a warning message");
+    error!("This is an error message");
+
+    // Test with different message formats
+    trace!("Message with {} formatting", "args");
+    debug!("Number: {}, String: {}", 42, "test");
+    info!("Boolean: {}, Float: {:.2}", true, 3.14);
 }
 
 // The remaining tests verify that Logger can be created and configured

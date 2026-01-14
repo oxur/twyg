@@ -334,4 +334,224 @@ mod tests {
         let logger = Logger::new(opts);
         assert_eq!(logger.level(), LogLevel::Info);
     }
+
+    #[test]
+    fn test_dispatch_with_stdout() {
+        let opts = Opts {
+            output: Output::Stdout,
+            level: LogLevel::Debug,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let result = logger.dispatch();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_dispatch_with_stderr() {
+        let opts = Opts {
+            output: Output::Stderr,
+            level: LogLevel::Info,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let result = logger.dispatch();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_dispatch_with_valid_file() {
+        use std::env;
+        let temp_file = env::temp_dir().join("twyg-test-dispatch.log");
+        let opts = Opts {
+            output: Output::File(temp_file.clone()),
+            level: LogLevel::Trace,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let result = logger.dispatch();
+        assert!(result.is_ok());
+        // Clean up
+        let _ = std::fs::remove_file(temp_file);
+    }
+
+    #[test]
+    fn test_dispatch_with_invalid_file_path() {
+        let opts = Opts {
+            output: Output::file("/proc/invalid/nonexistent/path/test.log"),
+            level: LogLevel::Debug,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let result = logger.dispatch();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_dispatch_with_report_caller() {
+        let opts = Opts {
+            report_caller: true,
+            level: LogLevel::Trace,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let result = logger.dispatch();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_dispatch_with_coloured_and_caller() {
+        let opts = Opts {
+            coloured: true,
+            report_caller: true,
+            output: Output::Stderr,
+            level: LogLevel::Warn,
+            ..Default::default()
+        };
+        let logger = Logger::new(opts);
+        let result = logger.dispatch();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_format_msg_with_stderr() {
+        let args = format_args!("stderr message");
+        let result = format_msg(&args, Stream::Stderr);
+        assert!(result.contains("▶"));
+        assert!(result.contains("stderr message"));
+    }
+
+    #[test]
+    fn test_format_msg_empty() {
+        let args = format_args!("");
+        let result = format_msg(&args, Stream::Stdout);
+        assert!(result.contains("▶"));
+    }
+
+    #[test]
+    fn test_colour_level_with_stderr() {
+        let error = colour_level(Level::Error, Stream::Stderr);
+        assert!(error.contains("ERROR") || error.contains("error"));
+
+        let warn = colour_level(Level::Warn, Stream::Stderr);
+        assert!(warn.contains("WARN") || warn.contains("warn"));
+
+        let info = colour_level(Level::Info, Stream::Stderr);
+        assert!(info.contains("INFO") || info.contains("info"));
+
+        let debug = colour_level(Level::Debug, Stream::Stderr);
+        assert!(debug.contains("DEBUG") || debug.contains("debug"));
+
+        let trace = colour_level(Level::Trace, Stream::Stderr);
+        assert!(trace.contains("TRACE") || trace.contains("trace"));
+    }
+
+    #[test]
+    fn test_logger_functions_create_dispatch() {
+        // Test that logger() function creates a valid dispatch
+        let dispatch = logger("2024-01-01".to_string(), LevelFilter::Info, Stream::Stdout);
+        // Just verify it was created successfully (Dispatch doesn't expose level getter)
+        let _ = dispatch;
+    }
+
+    #[test]
+    fn test_report_caller_logger_creates_dispatch() {
+        // Test that report_caller_logger() function creates a valid dispatch
+        let dispatch =
+            report_caller_logger("2024-01-01".to_string(), LevelFilter::Debug, Stream::Stderr);
+        // Just verify it was created successfully (Dispatch doesn't expose level getter)
+        let _ = dispatch;
+    }
+
+    #[test]
+    fn test_all_log_levels_to_filter() {
+        let levels = vec![
+            (LogLevel::Trace, LevelFilter::Trace),
+            (LogLevel::Debug, LevelFilter::Debug),
+            (LogLevel::Info, LevelFilter::Info),
+            (LogLevel::Warn, LevelFilter::Warn),
+            (LogLevel::Error, LevelFilter::Error),
+        ];
+
+        for (log_level, expected_filter) in levels {
+            let opts = Opts {
+                level: log_level,
+                ..Default::default()
+            };
+            let logger = Logger::new(opts);
+            assert_eq!(logger.level_to_filter(), expected_filter);
+        }
+    }
+
+    #[test]
+    fn test_dispatch_all_combinations() {
+        // Test various combinations of options to exercise more code paths
+        let test_cases = vec![
+            (true, true, LogLevel::Trace),
+            (true, false, LogLevel::Debug),
+            (false, true, LogLevel::Info),
+            (false, false, LogLevel::Warn),
+        ];
+
+        for (coloured, report_caller, level) in test_cases {
+            let opts = Opts {
+                coloured,
+                report_caller,
+                level,
+                ..Default::default()
+            };
+            let logger = Logger::new(opts);
+            let result = logger.dispatch();
+            assert!(result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_custom_time_formats() {
+        let time_formats = vec![
+            Some("%Y-%m-%d".to_string()),
+            Some("%H:%M:%S".to_string()),
+            Some("%Y-%m-%d %H:%M:%S%.3f".to_string()),
+            None,
+        ];
+
+        for time_format in time_formats {
+            let opts = Opts {
+                time_format: time_format.clone(),
+                level: LogLevel::Debug,
+                ..Default::default()
+            };
+            let logger = Logger::new(opts);
+            let ts = logger.format_ts();
+            assert!(!ts.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_dispatch_with_all_outputs() {
+        use std::env;
+        let temp_file = env::temp_dir().join("twyg-test-all-outputs.log");
+
+        let outputs = vec![
+            Output::Stdout,
+            Output::Stderr,
+            Output::File(temp_file.clone()),
+        ];
+
+        for output in outputs {
+            let opts = Opts {
+                output: output.clone(),
+                level: LogLevel::Trace,
+                report_caller: true,
+                coloured: true,
+                ..Default::default()
+            };
+            let logger = Logger::new(opts);
+            let result = logger.dispatch();
+            assert!(result.is_ok());
+        }
+
+        // Clean up
+        let _ = std::fs::remove_file(temp_file);
+    }
 }
