@@ -10,3 +10,4 @@
 **/*.rs.bk
 /.claude
 /assets/ai/ai-rust
+/workbench
