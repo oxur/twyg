@@ -7,7 +7,7 @@ pub mod output;
 use anyhow::{anyhow, Error, Result};
 
 pub use level::LogLevel;
-use logger::Logger;
+pub use logger::Logger;
 pub use opts::Opts;
 pub use out::{STDERR, STDOUT};
 pub use output::Output;

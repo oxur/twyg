@@ -1,5 +1,7 @@
-use twyg::{LogLevel, Opts, Output};
+use twyg::{LogLevel, Logger, Opts, Output};
 
+/// Test that setup works with default options.
+/// This is the only test that actually initializes the global logger.
 #[test]
 fn test_setup_with_defaults() {
     let opts = Opts::default();
@@ -7,113 +9,126 @@ fn test_setup_with_defaults() {
     assert!(result.is_ok());
 }
 
+// The remaining tests verify that Logger can be created and configured
+// without actually initializing the global logger (which can only be done once).
+
 #[test]
-fn test_setup_with_trace_level() {
+fn test_logger_with_trace_level() {
     let opts = Opts {
         level: LogLevel::Trace,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_debug_level() {
+fn test_logger_with_debug_level() {
     let opts = Opts {
         level: LogLevel::Debug,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_info_level() {
+fn test_logger_with_info_level() {
     let opts = Opts {
         level: LogLevel::Info,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_warn_level() {
+fn test_logger_with_warn_level() {
     let opts = Opts {
         level: LogLevel::Warn,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_error_level() {
+fn test_logger_with_error_level() {
     let opts = Opts {
         level: LogLevel::Error,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_coloured() {
+fn test_logger_with_coloured() {
     let opts = Opts {
         coloured: true,
         level: LogLevel::Debug,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_caller() {
+fn test_logger_with_caller() {
     let opts = Opts {
         report_caller: true,
         level: LogLevel::Debug,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_stdout() {
+fn test_logger_with_stdout() {
     let opts = Opts {
         output: Output::Stdout,
         level: LogLevel::Debug,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_stderr() {
+fn test_logger_with_stderr() {
     let opts = Opts {
         output: Output::Stderr,
         level: LogLevel::Debug,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_custom_time_format() {
+fn test_logger_with_custom_time_format() {
     let opts = Opts {
         time_format: Some("%H:%M:%S".to_string()),
         level: LogLevel::Debug,
         ..Default::default()
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
 #[test]
-fn test_setup_with_all_options() {
+fn test_logger_with_all_options() {
     let opts = Opts {
         coloured: true,
         output: Output::Stdout,
@@ -121,7 +136,8 @@ fn test_setup_with_all_options() {
         report_caller: true,
         time_format: Some("%Y-%m-%d %H:%M:%S".to_string()),
     };
-    let result = twyg::setup(opts);
+    let logger = Logger::new(opts);
+    let result = logger.dispatch();
     assert!(result.is_ok());
 }
 
