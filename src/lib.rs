@@ -29,11 +29,11 @@ pub use output::Output;
 /// Usage example:
 ///
 /// ```rust
-/// use twyg::{self, level};
+/// use twyg::{self, LogLevel};
 ///
-/// let opts = twyg::Opts{
+/// let opts = twyg::Opts {
 ///     coloured: true,
-///     level: level::debug(),
+///     level: LogLevel::Debug,
 ///     report_caller: true,
 ///
 ///     ..Default::default()
