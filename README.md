@@ -55,11 +55,17 @@ match twyg::setup(opts) {
 
 The supported options are:
 
-* `coloured`: setting to false will disable ANIS colours in the logging output
-* `file`: provide a path to a file, and output will be logged there too
-* `level`: case-insensitive logging level
-* `report_caller`: setting to true will output the filename and line number
-   where the logging call was made
+* `coloured`: setting to false will disable ANSI colours in the logging output
+* `output`: specify stdout, stderr, or a file path for log output
+* `level`: case-insensitive logging level (Trace, Debug, Info, Warn, Error)
+* `report_caller`: setting to true will output the filename and line number where the logging call was made
+* `timestamp_format`: choose from preset formats (RFC3339, Standard, Simple, TimeOnly) or provide a custom chrono format string
+* `pad_level`: enable padding of log level strings for alignment
+* `pad_amount`: number of characters to pad levels to (default: 5)
+* `pad_side`: which side to pad (Left or Right)
+* `arrow_char`: customize the arrow separator (default: "▶")
+* `msg_separator`: customize the separator before structured attributes (default: ": ")
+* `colors`: fine-grained color control for every log component (see below)
 
 Once the setup function has been called, all subsequent calls to the standard
 Rust logging macros will use this setup, providing output like the following:
@@ -68,6 +74,79 @@ Rust logging macros will use this setup, providing output like the following:
 
 The output in the screenshot above (click for a full-sized view) is from
 running the demos in the `examples` directory.
+
+## Fine-Grained Color Configuration
+
+twyg provides comprehensive control over colors for every component of your log output. You can customize:
+
+* Timestamp color
+* Individual level colors (Trace, Debug, Info, Warn, Error)
+* Message text color
+* Arrow separator color
+* Caller file and line colors
+* Target/module name color
+* Structured logging key and value colors
+
+Each color can have both foreground and background components. Here's an example with custom colors:
+
+```rust
+use twyg::{Color, ColorAttribute, Colors, LogLevel, OptsBuilder, PadSide, TSFormat};
+
+// Create custom color scheme
+let mut colors = Colors::default();
+
+// Vivid, high-contrast colors
+colors.timestamp = Some(Color::fg(ColorAttribute::HiCyan));
+colors.level_error = Some(Color::new(ColorAttribute::HiWhite, ColorAttribute::Red));
+colors.level_warn = Some(Color::new(ColorAttribute::Black, ColorAttribute::HiYellow));
+colors.level_info = Some(Color::fg(ColorAttribute::HiMagenta));
+colors.message = Some(Color::fg(ColorAttribute::HiWhite));
+colors.arrow = Some(Color::fg(ColorAttribute::Yellow));
+colors.attr_key = Some(Color::fg(ColorAttribute::Cyan));
+colors.attr_value = Some(Color::fg(ColorAttribute::HiGreen));
+
+let opts = OptsBuilder::new()
+    .coloured(true)
+    .level(LogLevel::Trace)
+    .timestamp_format(TSFormat::Simple)  // "20060102.150405" format
+    .pad_level(true)
+    .pad_amount(7)
+    .pad_side(PadSide::Right)
+    .arrow_char("→")
+    .msg_separator(" | ")
+    .colors(colors)
+    .build()
+    .unwrap();
+
+twyg::setup(opts).unwrap();
+
+// Now your logs will use the custom colors
+log::info!(user = "alice", action = "login"; "User logged in");
+```
+
+See `examples/fine-grained-colors.rs` for a complete working example.
+
+### Available Colors
+
+`ColorAttribute` provides these options:
+
+**Standard colors:** Black, Red, Green, Yellow, Blue, Magenta, Cyan, White
+
+**Bright/high-intensity colors:** HiBlack, HiRed, HiGreen, HiYellow, HiBlue, HiMagenta, HiCyan, HiWhite
+
+**Special:** Reset (no color)
+
+You can create colors with just foreground:
+
+```rust
+Color::fg(ColorAttribute::Red)
+```
+
+Or with both foreground and background:
+
+```rust
+Color::new(ColorAttribute::White, ColorAttribute::Red)  // White text on red background
+```
 
 ## Config
 
@@ -81,7 +160,22 @@ Use with the [config][config] library is seamless thanks to serde support:
         level: debug
         output: stdout
         report_caller: true
-        time_format: "%Y-%m-%d %H:%M:%S"
+        timestamp_format:
+            Standard  # Or: RFC3339, Simple, TimeOnly, or Custom("format string")
+        pad_level: true
+        pad_amount: 7
+        pad_side: Right
+        arrow_char: "→"
+        msg_separator: " | "
+        colors:
+            timestamp:
+                fg: HiCyan
+            level_info:
+                fg: HiWhite
+                bg: Blue
+            message:
+                fg: HiWhite
+            # ... other color customizations
     ```
 
 1. Add an entry to your config struct:

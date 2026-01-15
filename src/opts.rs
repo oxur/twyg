@@ -5,11 +5,29 @@
 use chrono::Local;
 use serde::{Deserialize, Serialize};
 
+use super::color::Colors;
 use super::error::{Result, TwygError};
 use super::level::LogLevel;
 use super::output::Output;
+use super::timestamp::TSFormat;
 
 const DEFAULT_TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+
+/// Side to pad level strings.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PadSide {
+    /// Pad on the left (right-align)
+    Left,
+
+    /// Pad on the right (left-align)
+    Right,
+}
+
+impl Default for PadSide {
+    fn default() -> Self {
+        Self::Right
+    }
+}
 
 /// Logger configuration options.
 ///
@@ -29,7 +47,7 @@ const DEFAULT_TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 ///     .build()
 ///     .unwrap();
 /// ```
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Opts {
     /// Enable colored output using ANSI escape codes.
     coloured: bool,
@@ -43,9 +61,44 @@ pub struct Opts {
     /// Include file name and line number in log output.
     report_caller: bool,
 
-    /// Custom time format string (chrono format).
-    /// If None, uses the default format: "%Y-%m-%d %H:%M:%S".
-    time_format: Option<String>,
+    /// Timestamp format (enum with presets + custom).
+    timestamp_format: TSFormat,
+
+    /// Enable level padding for alignment.
+    pad_level: bool,
+
+    /// Number of characters to pad level to.
+    pad_amount: usize,
+
+    /// Which side to pad the level string.
+    pad_side: PadSide,
+
+    /// Separator between message and attributes (default: ": ").
+    msg_separator: String,
+
+    /// Arrow character to use (default: "▶").
+    arrow_char: String,
+
+    /// Fine-grained color configuration.
+    colors: Colors,
+}
+
+impl Default for Opts {
+    fn default() -> Self {
+        Self {
+            coloured: false,
+            output: Output::default(),
+            level: LogLevel::default(),
+            report_caller: false,
+            timestamp_format: TSFormat::default(),
+            pad_level: false,
+            pad_amount: 5,
+            pad_side: PadSide::default(),
+            msg_separator: ": ".to_string(),
+            arrow_char: "▶".to_string(),
+            colors: Colors::default(),
+        }
+    }
 }
 
 impl Opts {
@@ -59,13 +112,7 @@ impl Opts {
     /// let opts = Opts::new();
     /// ```
     pub fn new() -> Opts {
-        Opts {
-            coloured: false,
-            output: Output::default(),
-            level: LogLevel::default(),
-            report_caller: false,
-            time_format: Some(DEFAULT_TS_FORMAT.to_string()),
-        }
+        Opts::default()
     }
 
     /// Returns whether colored output is enabled.
@@ -88,9 +135,48 @@ impl Opts {
         self.report_caller
     }
 
-    /// Returns the time format string, if set.
+    /// Returns the timestamp format.
+    pub fn timestamp_format(&self) -> &TSFormat {
+        &self.timestamp_format
+    }
+
+    /// Returns whether level padding is enabled.
+    pub fn pad_level(&self) -> bool {
+        self.pad_level
+    }
+
+    /// Returns the padding amount.
+    pub fn pad_amount(&self) -> usize {
+        self.pad_amount
+    }
+
+    /// Returns the padding side.
+    pub fn pad_side(&self) -> PadSide {
+        self.pad_side
+    }
+
+    /// Returns the message separator.
+    pub fn msg_separator(&self) -> &str {
+        &self.msg_separator
+    }
+
+    /// Returns the arrow character.
+    pub fn arrow_char(&self) -> &str {
+        &self.arrow_char
+    }
+
+    /// Returns the color configuration.
+    pub fn colors(&self) -> &Colors {
+        &self.colors
+    }
+
+    /// Returns the time format string (deprecated, for backward compatibility).
+    #[deprecated(since = "0.7.0", note = "Use timestamp_format() instead")]
     pub fn time_format(&self) -> Option<&str> {
-        self.time_format.as_deref()
+        match &self.timestamp_format {
+            TSFormat::Custom(s) => Some(s.as_str()),
+            _ => Some(self.timestamp_format.to_format_string()),
+        }
     }
 }
 
@@ -114,7 +200,13 @@ pub struct OptsBuilder {
     output: Output,
     level: LogLevel,
     report_caller: bool,
-    time_format: Option<String>,
+    timestamp_format: TSFormat,
+    pad_level: bool,
+    pad_amount: usize,
+    pad_side: PadSide,
+    msg_separator: String,
+    arrow_char: String,
+    colors: Colors,
 }
 
 impl Default for OptsBuilder {
@@ -131,8 +223,27 @@ impl OptsBuilder {
             output: Output::default(),
             level: LogLevel::default(),
             report_caller: false,
-            time_format: None,
+            timestamp_format: TSFormat::default(),
+            pad_level: false,
+            pad_amount: 5,
+            pad_side: PadSide::default(),
+            msg_separator: ": ".to_string(),
+            arrow_char: "▶".to_string(),
+            colors: Colors::default(),
         }
+    }
+
+    /// Preset with level padding enabled.
+    pub fn with_level_padding() -> Self {
+        Self::new()
+            .pad_level(true)
+            .pad_amount(5)
+            .pad_side(PadSide::Right)
+    }
+
+    /// Preset without caller information.
+    pub fn no_caller() -> Self {
+        Self::new().report_caller(false)
     }
 
     /// Enable or disable colored output.
@@ -159,7 +270,49 @@ impl OptsBuilder {
         self
     }
 
-    /// Set a custom time format string.
+    /// Set the timestamp format.
+    pub fn timestamp_format(mut self, format: TSFormat) -> Self {
+        self.timestamp_format = format;
+        self
+    }
+
+    /// Enable or disable level padding.
+    pub fn pad_level(mut self, pad: bool) -> Self {
+        self.pad_level = pad;
+        self
+    }
+
+    /// Set the padding amount.
+    pub fn pad_amount(mut self, amount: usize) -> Self {
+        self.pad_amount = amount;
+        self
+    }
+
+    /// Set the padding side.
+    pub fn pad_side(mut self, side: PadSide) -> Self {
+        self.pad_side = side;
+        self
+    }
+
+    /// Set the message separator.
+    pub fn msg_separator(mut self, sep: impl Into<String>) -> Self {
+        self.msg_separator = sep.into();
+        self
+    }
+
+    /// Set the arrow character.
+    pub fn arrow_char(mut self, arrow: impl Into<String>) -> Self {
+        self.arrow_char = arrow.into();
+        self
+    }
+
+    /// Set the color configuration.
+    pub fn colors(mut self, colors: Colors) -> Self {
+        self.colors = colors;
+        self
+    }
+
+    /// Set a custom time format string (deprecated).
     ///
     /// The format string uses chrono's format syntax.
     ///
@@ -173,19 +326,20 @@ impl OptsBuilder {
     ///     .build()
     ///     .unwrap();
     /// ```
+    #[deprecated(since = "0.7.0", note = "Use timestamp_format() instead")]
     pub fn time_format(mut self, format: impl Into<String>) -> Self {
-        self.time_format = Some(format.into());
+        self.timestamp_format = TSFormat::Custom(format.into());
         self
     }
 
-    /// Build the Opts, validating the time format if provided.
+    /// Build the Opts, validating the timestamp format if provided.
     ///
     /// # Errors
     ///
-    /// Returns an error if the time format string is invalid.
+    /// Returns an error if a custom timestamp format string is invalid.
     pub fn build(self) -> Result<Opts> {
-        // Validate time_format if provided
-        if let Some(ref fmt) = self.time_format {
+        // Validate custom timestamp format if provided
+        if let TSFormat::Custom(ref fmt) = self.timestamp_format {
             validate_time_format(fmt)?;
         }
 
@@ -194,7 +348,13 @@ impl OptsBuilder {
             output: self.output,
             level: self.level,
             report_caller: self.report_caller,
-            time_format: self.time_format,
+            timestamp_format: self.timestamp_format,
+            pad_level: self.pad_level,
+            pad_amount: self.pad_amount,
+            pad_side: self.pad_side,
+            msg_separator: self.msg_separator,
+            arrow_char: self.arrow_char,
+            colors: self.colors,
         })
     }
 }
@@ -260,7 +420,8 @@ mod tests {
         assert_eq!(opts.output(), &Output::Stdout);
         assert_eq!(opts.level(), LogLevel::Error);
         assert!(!opts.report_caller());
-        assert!(opts.time_format().is_none());
+        // timestamp_format is now always set (defaults to Standard)
+        assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
     }
 
     #[test]
@@ -270,7 +431,7 @@ mod tests {
         assert_eq!(opts.output(), &Output::Stdout);
         assert_eq!(opts.level(), LogLevel::Error);
         assert!(!opts.report_caller());
-        assert_eq!(opts.time_format(), Some("%Y-%m-%d %H:%M:%S"));
+        assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
     }
 
     #[test]
@@ -296,7 +457,7 @@ mod tests {
             .output(Output::Stderr)
             .level(LogLevel::Debug)
             .report_caller(true)
-            .time_format("%H:%M:%S")
+            .timestamp_format(TSFormat::TimeOnly)
             .build()
             .unwrap();
 
@@ -307,7 +468,7 @@ mod tests {
         assert_eq!(opts.output(), deserialized.output());
         assert_eq!(opts.level(), deserialized.level());
         assert_eq!(opts.report_caller(), deserialized.report_caller());
-        assert_eq!(opts.time_format(), deserialized.time_format());
+        assert_eq!(opts.timestamp_format(), deserialized.timestamp_format());
     }
 
     #[test]
@@ -317,7 +478,7 @@ mod tests {
             .output(Output::file("/tmp/test.log"))
             .level(LogLevel::Trace)
             .report_caller(true)
-            .time_format("%Y-%m-%d")
+            .timestamp_format(TSFormat::Custom("%Y-%m-%d".to_string()))
             .build()
             .unwrap();
 
@@ -325,7 +486,10 @@ mod tests {
         assert_eq!(opts.output(), &Output::file("/tmp/test.log"));
         assert_eq!(opts.level(), LogLevel::Trace);
         assert!(opts.report_caller());
-        assert_eq!(opts.time_format(), Some("%Y-%m-%d"));
+        assert_eq!(
+            opts.timestamp_format(),
+            &TSFormat::Custom("%Y-%m-%d".to_string())
+        );
     }
 
     #[test]
@@ -350,7 +514,8 @@ mod tests {
         assert_eq!(opts.output(), &Output::Stdout);
         assert_eq!(opts.level(), LogLevel::Error);
         assert!(!opts.report_caller());
-        assert!(opts.time_format().is_none());
+        // timestamp_format is now always set (defaults to Standard)
+        assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
     }
 
     #[test]

@@ -1,16 +1,20 @@
+pub mod color;
 pub mod error;
 pub mod level;
 pub mod logger;
 pub mod opts;
 pub mod out;
 pub mod output;
+pub mod timestamp;
 
+pub use color::{Color, ColorAttribute, Colors};
 pub use error::{Result, TwygError};
 pub use level::LogLevel;
 pub use logger::Logger;
-pub use opts::{Opts, OptsBuilder};
+pub use opts::{Opts, OptsBuilder, PadSide};
 pub use out::{STDERR, STDOUT};
 pub use output::Output;
+pub use timestamp::TSFormat;
 
 /// Sets up the twyg logger based upon the provided options.
 ///

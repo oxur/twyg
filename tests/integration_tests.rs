@@ -1,5 +1,5 @@
 use log::{debug, error, info, trace, warn};
-use twyg::{LogLevel, Logger, Opts, OptsBuilder, Output};
+use twyg::{LogLevel, Logger, Opts, OptsBuilder, Output, TSFormat};
 
 /// Test that setup works with default options and actually write log messages
 /// to exercise the formatting closures.
@@ -124,13 +124,13 @@ fn test_logger_with_stderr() {
 #[test]
 fn test_logger_with_custom_time_format() {
     let opts = OptsBuilder::new()
-        .time_format("%H:%M:%S")
+        .timestamp_format(TSFormat::TimeOnly)
         .level(LogLevel::Debug)
         .build()
         .unwrap();
     let logger = Logger::new(opts.clone());
     assert_eq!(logger.level(), LogLevel::Debug);
-    assert_eq!(opts.time_format(), Some("%H:%M:%S"));
+    assert_eq!(opts.timestamp_format(), &TSFormat::TimeOnly);
 }
 
 #[test]
@@ -140,7 +140,7 @@ fn test_logger_with_all_options() {
         .output(Output::Stdout)
         .level(LogLevel::Trace)
         .report_caller(true)
-        .time_format("%Y-%m-%d %H:%M:%S")
+        .timestamp_format(TSFormat::Standard)
         .build()
         .unwrap();
     let logger = Logger::new(opts.clone());
@@ -148,7 +148,7 @@ fn test_logger_with_all_options() {
     assert!(opts.coloured());
     assert_eq!(opts.output(), &Output::Stdout);
     assert!(opts.report_caller());
-    assert_eq!(opts.time_format(), Some("%Y-%m-%d %H:%M:%S"));
+    assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
 }
 
 #[test]
@@ -158,7 +158,7 @@ fn test_opts_new() {
     assert_eq!(opts.output(), &Output::Stdout);
     assert_eq!(opts.level(), LogLevel::Error);
     assert!(!opts.report_caller());
-    assert_eq!(opts.time_format(), Some("%Y-%m-%d %H:%M:%S"));
+    assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
 }
 
 #[test]

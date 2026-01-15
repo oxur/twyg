@@ -19,8 +19,6 @@ fn main() {
 
     twyg::setup(opts).unwrap();
 
-    println!("\n=== Structured Logging Examples ===\n");
-
     // Example 1: User action logging
     log::info!(user = "alice", action = "login"; "User logged in");
 
@@ -63,6 +61,4 @@ fn main() {
 
     // Example 7: Regular logging still works (no kv pairs)
     log::info!("This is a regular log message without key-value pairs");
-
-    println!("\n=== Examples Complete ===\n");
 }

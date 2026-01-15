@@ -133,7 +133,7 @@ examples:
 run-featured:
 	@echo "$(BLUE)Running featured examples...$(RESET)"
 	@$(MAKE) run-primary
-	@echo "$(GREEN)✓ All examples completed$(RESET)"
+	@echo "$(GREEN)✓ Featured examples completed$(RESET)"
 
 run-primary:
 	@echo ""
@@ -153,11 +153,7 @@ run-primary:
 	@cargo run --example no-colour
 	@echo ""
 
-
-.PHONY: run-examples
-run-examples:
-	@echo "$(BLUE)Running all examples...$(RESET)"
-	@$(MAKE) run-primary
+run-remaining:
 	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
 	@echo "$(CYAN)║$(RESET)  Example: colour-caller                                  $(CYAN)║$(RESET)"
 	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
@@ -178,6 +174,12 @@ run-examples:
 	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
 	@cargo run --example stderr
 	@echo ""
+
+.PHONY: run-examples
+run-examples:
+	@echo "$(BLUE)Running all examples...$(RESET)"
+	@$(MAKE) run-primary
+	@$(MAKE) run-remaining
 	@echo "$(GREEN)✓ All examples completed$(RESET)"
 
 # Cleaning targets
