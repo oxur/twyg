@@ -142,13 +142,13 @@ pub mod compat {
     /// Constant for stderr (backwards compatibility).
     pub const STDERR: &str = "stderr";
 
-    /// Returns stdout as an Option<String> (backwards compatibility).
+    /// Returns stdout as an `Option<String>` (backwards compatibility).
     #[deprecated(since = "0.6.0", note = "Use Output::Stdout instead")]
     pub fn stdout() -> Option<String> {
         Some(String::from(STDOUT))
     }
 
-    /// Returns stderr as an Option<String> (backwards compatibility).
+    /// Returns stderr as an `Option<String>` (backwards compatibility).
     #[deprecated(since = "0.6.0", note = "Use Output::Stderr instead")]
     pub fn stderr() -> Option<String> {
         Some(String::from(STDERR))

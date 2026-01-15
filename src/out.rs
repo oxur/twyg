@@ -23,14 +23,14 @@ pub const STDOUT: &str = "stdout";
 /// Consider using [`Output::Stderr`](crate::Output::Stderr) instead for type safety.
 pub const STDERR: &str = "stderr";
 
-/// Returns "stdout" as an Option<String> for backwards compatibility.
+/// Returns "stdout" as an `Option<String>` for backwards compatibility.
 ///
 /// Consider using [`Output::Stdout`](crate::Output::Stdout) instead.
 pub fn stdout() -> Option<String> {
     Some(String::from(STDOUT))
 }
 
-/// Returns "stderr" as an Option<String> for backwards compatibility.
+/// Returns "stderr" as an `Option<String>` for backwards compatibility.
 ///
 /// Consider using [`Output::Stderr`](crate::Output::Stderr) instead.
 pub fn stderr() -> Option<String> {

@@ -32,21 +32,20 @@ twyg = "0.5"
 ```
 
 I like to put my logging setup in YAML config files for my apps, but however
-you prefer to store your config, you'll next need to populate the
-`twyg::Opts` struct for your preferred mechanism:
+you prefer to store your config, you'll next need to create a `twyg::Opts`
+using the builder pattern:
 
 ```rust
-use twyg::{self, level};
+use twyg::{LogLevel, OptsBuilder};
 
-let opts = twyg::Opts{
-    coloured: true,
-    level: level::debug(),
-    report_caller: true,
+let opts = OptsBuilder::new()
+    .coloured(true)
+    .level(LogLevel::Debug)
+    .report_caller(true)
+    .build()
+    .unwrap();
 
-    ..Default::default()
-};
-
-match twyg::setup(&opts) {
+match twyg::setup(opts) {
     Ok(_) => {},
     Err(error) => {
         panic!("Could not setup logger: {:?}", error)
@@ -72,7 +71,7 @@ running the demos in the `examples` directory.
 
 ## Config
 
-Use with the [config][config] library is seamless:
+Use with the [config][config] library is seamless thanks to serde support:
 
 1. Set up some YAML:
 
@@ -80,12 +79,16 @@ Use with the [config][config] library is seamless:
     logging:
         coloured: true
         level: debug
+        output: stdout
         report_caller: true
+        time_format: "%Y-%m-%d %H:%M:%S"
     ```
 
 1. Add an entry to your config struct:
 
     ```rust
+    use serde::Deserialize;
+
     #[derive(Debug, Deserialize)]
     pub struct YourAppConfig {
         ...
@@ -104,11 +107,119 @@ Use with the [config][config] library is seamless:
 1. Pass the logging config to twyg:
 
     ```rust
-    match twyg::setup(&cfg.logging) {
+    match twyg::setup(cfg.logging) {
         Ok(_) => {}
         Err(error) => panic!("Could not setup logger: {error:?}"),
     };
     ```
+
+Note: The `Opts` struct uses lowercase serialization for enums (`"debug"`, `"info"`, etc.),
+so your YAML/JSON config files should use lowercase strings for `level` and `output` fields.
+
+## Migration Guide
+
+### Upgrading from v0.4 to v0.5
+
+v0.5 introduces type-safe enums and a builder pattern for better API ergonomics. Here's how to migrate:
+
+#### 1. Replace stringly-typed level functions with LogLevel enum
+
+**Before (v0.4):**
+
+```rust
+use twyg::{self, level};
+
+let opts = twyg::Opts {
+    level: level::debug(),
+    ...
+};
+```
+
+**After (v0.5):**
+
+```rust
+use twyg::{LogLevel, OptsBuilder};
+
+let opts = OptsBuilder::new()
+    .level(LogLevel::Debug)
+    .build()
+    .unwrap();
+```
+
+#### 2. Replace stringly-typed output with Output enum
+
+**Before (v0.4):**
+
+```rust
+use twyg::{self, out};
+
+let opts = twyg::Opts {
+    file: out::stdout(),
+    ...
+};
+```
+
+**After (v0.5):**
+
+```rust
+use twyg::{Output, OptsBuilder};
+
+let opts = OptsBuilder::new()
+    .output(Output::Stdout)
+    .build()
+    .unwrap();
+```
+
+#### 3. Use OptsBuilder instead of struct literals
+
+**Before (v0.4):**
+
+```rust
+let opts = twyg::Opts {
+    coloured: true,
+    level: level::debug(),
+    report_caller: true,
+    ..Default::default()
+};
+```
+
+**After (v0.5):**
+
+```rust
+let opts = OptsBuilder::new()
+    .coloured(true)
+    .level(LogLevel::Debug)
+    .report_caller(true)
+    .build()
+    .unwrap();
+```
+
+#### 4. Error handling now uses custom TwygError
+
+**Before (v0.4):**
+
+```rust
+match twyg::setup(&opts) {
+    Ok(_) => {},
+    Err(error) => { /* anyhow::Error */ },
+}
+```
+
+**After (v0.5):**
+
+```rust
+match twyg::setup(opts) {
+    Ok(_) => {},
+    Err(error) => { /* twyg::TwygError with specific variants */ },
+}
+```
+
+#### Backwards Compatibility
+
+The old stringly-typed functions are still available but deprecated:
+
+* `level::debug()`, `level::info()`, etc. → Use `LogLevel::Debug`, `LogLevel::Info`
+* `out::stdout()`, `out::stderr()` → Use `Output::Stdout`, `Output::Stderr`
 
 ## License
 
