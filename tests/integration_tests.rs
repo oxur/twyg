@@ -1,17 +1,17 @@
 use log::{debug, error, info, trace, warn};
-use twyg::{LogLevel, Logger, Opts, Output};
+use twyg::{LogLevel, Logger, Opts, OptsBuilder, Output};
 
 /// Test that setup works with default options and actually write log messages
 /// to exercise the formatting closures.
 /// This is the only test that actually initializes the global logger.
 #[test]
 fn test_setup_with_defaults() {
-    let opts = Opts {
-        level: LogLevel::Trace,
-        report_caller: true,
-        coloured: false,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new()
+        .level(LogLevel::Trace)
+        .report_caller(true)
+        .coloured(false)
+        .build()
+        .unwrap();
     let result = twyg::setup(opts);
     assert!(result.is_ok());
 
@@ -33,10 +33,7 @@ fn test_setup_with_defaults() {
 
 #[test]
 fn test_logger_with_trace_level() {
-    let opts = Opts {
-        level: LogLevel::Trace,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new().level(LogLevel::Trace).build().unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -44,10 +41,7 @@ fn test_logger_with_trace_level() {
 
 #[test]
 fn test_logger_with_debug_level() {
-    let opts = Opts {
-        level: LogLevel::Debug,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new().level(LogLevel::Debug).build().unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -55,10 +49,7 @@ fn test_logger_with_debug_level() {
 
 #[test]
 fn test_logger_with_info_level() {
-    let opts = Opts {
-        level: LogLevel::Info,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new().level(LogLevel::Info).build().unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -66,10 +57,7 @@ fn test_logger_with_info_level() {
 
 #[test]
 fn test_logger_with_warn_level() {
-    let opts = Opts {
-        level: LogLevel::Warn,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new().level(LogLevel::Warn).build().unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -77,10 +65,7 @@ fn test_logger_with_warn_level() {
 
 #[test]
 fn test_logger_with_error_level() {
-    let opts = Opts {
-        level: LogLevel::Error,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new().level(LogLevel::Error).build().unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -88,11 +73,11 @@ fn test_logger_with_error_level() {
 
 #[test]
 fn test_logger_with_coloured() {
-    let opts = Opts {
-        coloured: true,
-        level: LogLevel::Debug,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new()
+        .coloured(true)
+        .level(LogLevel::Debug)
+        .build()
+        .unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -100,11 +85,11 @@ fn test_logger_with_coloured() {
 
 #[test]
 fn test_logger_with_caller() {
-    let opts = Opts {
-        report_caller: true,
-        level: LogLevel::Debug,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new()
+        .report_caller(true)
+        .level(LogLevel::Debug)
+        .build()
+        .unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -112,11 +97,11 @@ fn test_logger_with_caller() {
 
 #[test]
 fn test_logger_with_stdout() {
-    let opts = Opts {
-        output: Output::Stdout,
-        level: LogLevel::Debug,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new()
+        .output(Output::Stdout)
+        .level(LogLevel::Debug)
+        .build()
+        .unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -124,11 +109,11 @@ fn test_logger_with_stdout() {
 
 #[test]
 fn test_logger_with_stderr() {
-    let opts = Opts {
-        output: Output::Stderr,
-        level: LogLevel::Debug,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new()
+        .output(Output::Stderr)
+        .level(LogLevel::Debug)
+        .build()
+        .unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -136,11 +121,11 @@ fn test_logger_with_stderr() {
 
 #[test]
 fn test_logger_with_custom_time_format() {
-    let opts = Opts {
-        time_format: Some("%H:%M:%S".to_string()),
-        level: LogLevel::Debug,
-        ..Default::default()
-    };
+    let opts = OptsBuilder::new()
+        .time_format("%H:%M:%S")
+        .level(LogLevel::Debug)
+        .build()
+        .unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -148,13 +133,14 @@ fn test_logger_with_custom_time_format() {
 
 #[test]
 fn test_logger_with_all_options() {
-    let opts = Opts {
-        coloured: true,
-        output: Output::Stdout,
-        level: LogLevel::Trace,
-        report_caller: true,
-        time_format: Some("%Y-%m-%d %H:%M:%S".to_string()),
-    };
+    let opts = OptsBuilder::new()
+        .coloured(true)
+        .output(Output::Stdout)
+        .level(LogLevel::Trace)
+        .report_caller(true)
+        .time_format("%Y-%m-%d %H:%M:%S")
+        .build()
+        .unwrap();
     let logger = Logger::new(opts);
     let result = logger.dispatch();
     assert!(result.is_ok());
@@ -163,11 +149,11 @@ fn test_logger_with_all_options() {
 #[test]
 fn test_opts_new() {
     let opts = Opts::new();
-    assert!(!opts.coloured);
-    assert_eq!(opts.output, Output::Stdout);
-    assert_eq!(opts.level, LogLevel::Error);
-    assert!(!opts.report_caller);
-    assert_eq!(opts.time_format, Some("%Y-%m-%d %H:%M:%S".to_string()));
+    assert!(!opts.coloured());
+    assert_eq!(opts.output(), &Output::Stdout);
+    assert_eq!(opts.level(), LogLevel::Error);
+    assert!(!opts.report_caller());
+    assert_eq!(opts.time_format(), Some("%Y-%m-%d %H:%M:%S"));
 }
 
 #[test]

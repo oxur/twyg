@@ -488,6 +488,7 @@ dependencies = [
  "owo-colors",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]

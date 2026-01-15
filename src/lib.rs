@@ -1,14 +1,14 @@
+pub mod error;
 pub mod level;
 pub mod logger;
 pub mod opts;
 pub mod out;
 pub mod output;
 
-use anyhow::{anyhow, Error, Result};
-
+pub use error::{Result, TwygError};
 pub use level::LogLevel;
 pub use logger::Logger;
-pub use opts::Opts;
+pub use opts::{Opts, OptsBuilder};
 pub use out::{STDERR, STDOUT};
 pub use output::Output;
 
@@ -29,15 +29,14 @@ pub use output::Output;
 /// Usage example:
 ///
 /// ```rust
-/// use twyg::{self, LogLevel};
+/// use twyg::{self, LogLevel, OptsBuilder};
 ///
-/// let opts = twyg::Opts {
-///     coloured: true,
-///     level: LogLevel::Debug,
-///     report_caller: true,
-///
-///     ..Default::default()
-/// };
+/// let opts = OptsBuilder::new()
+///     .coloured(true)
+///     .level(LogLevel::Debug)
+///     .report_caller(true)
+///     .build()
+///     .unwrap();
 ///
 /// match twyg::setup(opts) {
 ///     Ok(_) => {},
@@ -50,15 +49,11 @@ pub use output::Output;
 /// At which point, calls to the `log::*!` macros will be displayed and
 /// formatted according to your configuration and twyg.
 ///
-pub fn setup(opts: Opts) -> Result<Logger, Error> {
+pub fn setup(opts: Opts) -> Result<Logger> {
     let l = Logger::new(opts);
-    match l.dispatch() {
-        Err(e) => Err(anyhow!("couldn't set up Twyg logger: {:?}", e)),
-        Ok(d) => match d.apply() {
-            Err(e) => Err(anyhow!("couldn't apply setup to Fern logger: {:?}", e)),
-            Ok(()) => Ok(l),
-        },
-    }
+    let dispatch = l.dispatch()?;
+    dispatch.apply()?;
+    Ok(l)
 }
 
 #[cfg(test)]
@@ -79,10 +74,12 @@ mod tests {
     #[test]
     fn test_setup_dispatch_error_invalid_file_path() {
         // Test error path when dispatch() fails due to invalid file path
-        let opts = Opts {
-            output: Output::file("/proc/invalid/path/that/cannot/exist/test.log"),
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::file(
+                "/proc/invalid/path/that/cannot/exist/test.log",
+            ))
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_err());
@@ -92,10 +89,10 @@ mod tests {
     fn test_setup_dispatch_error_no_permission() {
         // Test error path when dispatch() fails due to permission denied
         // /dev/null is writable, but /root typically isn't without sudo
-        let opts = Opts {
-            output: Output::file("/root/twyg-test-no-permission.log"),
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::file("/root/twyg-test-no-permission.log"))
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         // This may or may not fail depending on system permissions

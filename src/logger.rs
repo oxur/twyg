@@ -4,12 +4,12 @@
 
 use std::fmt::Arguments;
 
-use anyhow::{Error, Result};
 use chrono::Local;
 use log::{Level, LevelFilter};
 use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 
+use super::error::Result;
 use super::level::LogLevel;
 use super::opts::Opts;
 use super::output::Output;
@@ -23,19 +23,19 @@ pub struct Logger {
 
 impl Logger {
     pub fn new(opts: Opts) -> Logger {
-        owo_colors::set_override(opts.coloured);
+        owo_colors::set_override(opts.coloured());
         Logger { opts }
     }
 
-    pub fn dispatch(&self) -> Result<fern::Dispatch, Error> {
+    pub fn dispatch(&self) -> Result<fern::Dispatch> {
         let filter = self.level_to_filter();
-        let mut dispatch = if self.opts.report_caller {
+        let mut dispatch = if self.opts.report_caller() {
             report_caller_logger(self.format_ts(), filter, self.stream())
         } else {
             logger(self.format_ts(), filter, self.stream())
         };
 
-        dispatch = match &self.opts.output {
+        dispatch = match self.opts.output() {
             Output::Stdout => dispatch.chain(std::io::stdout()),
             Output::Stderr => dispatch.chain(std::io::stderr()),
             Output::File(path) => dispatch.chain(fern::log_file(path)?),
@@ -47,24 +47,20 @@ impl Logger {
     // Private methods
 
     fn format_ts(&self) -> String {
-        let ts = self
-            .opts
-            .time_format
-            .as_deref()
-            .unwrap_or(DEFAULT_TS_FORMAT);
+        let ts = self.opts.time_format().unwrap_or(DEFAULT_TS_FORMAT);
         Local::now().format(ts).to_string()
     }
 
     pub fn level(&self) -> LogLevel {
-        self.opts.level
+        self.opts.level()
     }
 
     fn level_to_filter(&self) -> LevelFilter {
-        self.opts.level.into()
+        self.opts.level().into()
     }
 
     fn stream(&self) -> Stream {
-        Stream::from(&self.opts.output)
+        Stream::from(self.opts.output())
     }
 }
 
@@ -148,12 +144,13 @@ fn colour_level(level: Level, stream: Stream) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::opts::OptsBuilder;
 
     #[test]
     fn test_logger_new() {
         let opts = Opts::default();
         let logger = Logger::new(opts.clone());
-        assert_eq!(logger.opts.coloured, opts.coloured);
+        assert_eq!(logger.opts.coloured(), opts.coloured());
     }
 
     #[test]
@@ -161,7 +158,7 @@ mod tests {
         let opts = Opts::default();
         let logger1 = Logger::new(opts);
         let logger2 = logger1.clone();
-        assert_eq!(logger1.opts.coloured, logger2.opts.coloured);
+        assert_eq!(logger1.opts.coloured(), logger2.opts.coloured());
     }
 
     #[test]
@@ -174,10 +171,7 @@ mod tests {
 
     #[test]
     fn test_format_ts() {
-        let opts = Opts {
-            time_format: Some("%Y-%m-%d".to_string()),
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new().time_format("%Y-%m-%d").build().unwrap();
         let logger = Logger::new(opts);
         let ts = logger.format_ts();
         // Should be in YYYY-MM-DD format
@@ -196,10 +190,7 @@ mod tests {
 
     #[test]
     fn test_stream_stdout() {
-        let opts = Opts {
-            output: Output::Stdout,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new().output(Output::Stdout).build().unwrap();
         let logger = Logger::new(opts);
         let stream = logger.stream();
         match stream {
@@ -210,10 +201,7 @@ mod tests {
 
     #[test]
     fn test_stream_stderr() {
-        let opts = Opts {
-            output: Output::Stderr,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new().output(Output::Stderr).build().unwrap();
         let logger = Logger::new(opts);
         let stream = logger.stream();
         match stream {
@@ -224,10 +212,10 @@ mod tests {
 
     #[test]
     fn test_stream_file_uses_stdout() {
-        let opts = Opts {
-            output: Output::file("/tmp/test.log"),
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::file("/tmp/test.log"))
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let stream = logger.stream();
         match stream {
@@ -300,26 +288,23 @@ mod tests {
 
     #[test]
     fn test_logger_serialize_deserialize() {
-        let opts = Opts {
-            coloured: true,
-            level: LogLevel::Debug,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .coloured(true)
+            .level(LogLevel::Debug)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
 
         let serialized = serde_json::to_string(&logger).unwrap();
         let deserialized: Logger = serde_json::from_str(&serialized).unwrap();
 
-        assert_eq!(logger.opts.coloured, deserialized.opts.coloured);
-        assert_eq!(logger.opts.level, deserialized.opts.level);
+        assert_eq!(logger.opts.coloured(), deserialized.opts.coloured());
+        assert_eq!(logger.opts.level(), deserialized.opts.level());
     }
 
     #[test]
     fn test_level_to_filter() {
-        let opts = Opts {
-            level: LogLevel::Debug,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new().level(LogLevel::Debug).build().unwrap();
         let logger = Logger::new(opts);
         let filter = logger.level_to_filter();
         assert_eq!(filter, LevelFilter::Debug);
@@ -327,21 +312,18 @@ mod tests {
 
     #[test]
     fn test_level() {
-        let opts = Opts {
-            level: LogLevel::Info,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new().level(LogLevel::Info).build().unwrap();
         let logger = Logger::new(opts);
         assert_eq!(logger.level(), LogLevel::Info);
     }
 
     #[test]
     fn test_dispatch_with_stdout() {
-        let opts = Opts {
-            output: Output::Stdout,
-            level: LogLevel::Debug,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::Stdout)
+            .level(LogLevel::Debug)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_ok());
@@ -349,11 +331,11 @@ mod tests {
 
     #[test]
     fn test_dispatch_with_stderr() {
-        let opts = Opts {
-            output: Output::Stderr,
-            level: LogLevel::Info,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::Stderr)
+            .level(LogLevel::Info)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_ok());
@@ -363,11 +345,11 @@ mod tests {
     fn test_dispatch_with_valid_file() {
         use std::env;
         let temp_file = env::temp_dir().join("twyg-test-dispatch.log");
-        let opts = Opts {
-            output: Output::File(temp_file.clone()),
-            level: LogLevel::Trace,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::File(temp_file.clone()))
+            .level(LogLevel::Trace)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_ok());
@@ -377,11 +359,11 @@ mod tests {
 
     #[test]
     fn test_dispatch_with_invalid_file_path() {
-        let opts = Opts {
-            output: Output::file("/proc/invalid/nonexistent/path/test.log"),
-            level: LogLevel::Debug,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .output(Output::file("/proc/invalid/nonexistent/path/test.log"))
+            .level(LogLevel::Debug)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_err());
@@ -389,11 +371,11 @@ mod tests {
 
     #[test]
     fn test_dispatch_with_report_caller() {
-        let opts = Opts {
-            report_caller: true,
-            level: LogLevel::Trace,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .report_caller(true)
+            .level(LogLevel::Trace)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_ok());
@@ -401,13 +383,13 @@ mod tests {
 
     #[test]
     fn test_dispatch_with_coloured_and_caller() {
-        let opts = Opts {
-            coloured: true,
-            report_caller: true,
-            output: Output::Stderr,
-            level: LogLevel::Warn,
-            ..Default::default()
-        };
+        let opts = OptsBuilder::new()
+            .coloured(true)
+            .report_caller(true)
+            .output(Output::Stderr)
+            .level(LogLevel::Warn)
+            .build()
+            .unwrap();
         let logger = Logger::new(opts);
         let result = logger.dispatch();
         assert!(result.is_ok());
@@ -474,10 +456,7 @@ mod tests {
         ];
 
         for (log_level, expected_filter) in levels {
-            let opts = Opts {
-                level: log_level,
-                ..Default::default()
-            };
+            let opts = OptsBuilder::new().level(log_level).build().unwrap();
             let logger = Logger::new(opts);
             assert_eq!(logger.level_to_filter(), expected_filter);
         }
@@ -494,12 +473,12 @@ mod tests {
         ];
 
         for (coloured, report_caller, level) in test_cases {
-            let opts = Opts {
-                coloured,
-                report_caller,
-                level,
-                ..Default::default()
-            };
+            let opts = OptsBuilder::new()
+                .coloured(coloured)
+                .report_caller(report_caller)
+                .level(level)
+                .build()
+                .unwrap();
             let logger = Logger::new(opts);
             let result = logger.dispatch();
             assert!(result.is_ok());
@@ -516,10 +495,13 @@ mod tests {
         ];
 
         for time_format in time_formats {
-            let opts = Opts {
-                time_format: time_format.clone(),
-                level: LogLevel::Debug,
-                ..Default::default()
+            let opts = match time_format {
+                Some(fmt) => OptsBuilder::new()
+                    .time_format(fmt)
+                    .level(LogLevel::Debug)
+                    .build()
+                    .unwrap(),
+                None => OptsBuilder::new().level(LogLevel::Debug).build().unwrap(),
             };
             let logger = Logger::new(opts);
             let ts = logger.format_ts();
@@ -539,13 +521,13 @@ mod tests {
         ];
 
         for output in outputs {
-            let opts = Opts {
-                output: output.clone(),
-                level: LogLevel::Trace,
-                report_caller: true,
-                coloured: true,
-                ..Default::default()
-            };
+            let opts = OptsBuilder::new()
+                .output(output.clone())
+                .level(LogLevel::Trace)
+                .report_caller(true)
+                .coloured(true)
+                .build()
+                .unwrap();
             let logger = Logger::new(opts);
             let result = logger.dispatch();
             assert!(result.is_ok());
