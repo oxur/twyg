@@ -82,7 +82,6 @@ fn report_caller_logger(date: String, filter: LevelFilter, stream: Stream) -> fe
                 .if_supports_color(stream, |x| x.bright_yellow()),
                 record
                     .target()
-                    .to_string()
                     .if_supports_color(stream, |x| x.bright_yellow()),
                 format_msg(message, stream).if_supports_color(stream, |x| x.bright_green())
             ))
@@ -99,7 +98,6 @@ fn logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
                 colour_level(record.level(), stream),
                 record
                     .target()
-                    .to_string()
                     .if_supports_color(stream, |x| x.bright_yellow()),
                 format_msg(message, stream).if_supports_color(stream, |x| x.bright_green())
             ))
@@ -111,10 +109,10 @@ fn opt_str_or_placeholder(x: Option<&str>) -> &str {
     x.unwrap_or("??")
 }
 
-fn opt_u32_or_placeholder(x: Option<u32>) -> String {
+fn opt_u32_or_placeholder(x: Option<u32>) -> std::borrow::Cow<'static, str> {
     match x {
-        None => "??".to_string(),
-        Some(val) => val.to_string(),
+        None => std::borrow::Cow::Borrowed("??"),
+        Some(val) => std::borrow::Cow::Owned(val.to_string()),
     }
 }
 

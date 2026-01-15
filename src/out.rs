@@ -1,10 +1,38 @@
+//! Backwards compatibility constants for output destinations.
+//!
+//! This module provides legacy string-based constants and functions for
+//! specifying output destinations. New code should use the [`Output`](crate::Output)
+//! enum instead.
+//!
+//! # Examples
+//!
+//! ```
+//! use twyg::{STDOUT, STDERR};
+//!
+//! assert_eq!(STDOUT, "stdout");
+//! assert_eq!(STDERR, "stderr");
+//! ```
+
+/// String constant for standard output destination.
+///
+/// Consider using [`Output::Stdout`](crate::Output::Stdout) instead for type safety.
 pub const STDOUT: &str = "stdout";
+
+/// String constant for standard error destination.
+///
+/// Consider using [`Output::Stderr`](crate::Output::Stderr) instead for type safety.
 pub const STDERR: &str = "stderr";
 
+/// Returns "stdout" as an Option<String> for backwards compatibility.
+///
+/// Consider using [`Output::Stdout`](crate::Output::Stdout) instead.
 pub fn stdout() -> Option<String> {
     Some(String::from(STDOUT))
 }
 
+/// Returns "stderr" as an Option<String> for backwards compatibility.
+///
+/// Consider using [`Output::Stderr`](crate::Output::Stderr) instead.
 pub fn stderr() -> Option<String> {
     Some(String::from(STDERR))
 }

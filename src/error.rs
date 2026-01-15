@@ -1,4 +1,24 @@
 //! Error types for the twyg logging library.
+//!
+//! This module provides custom error types for twyg operations using the
+//! [`thiserror`](https://docs.rs/thiserror) crate for ergonomic error handling.
+//!
+//! # Error Types
+//!
+//! - [`TwygError`] - The main error type for all twyg operations
+//! - [`Result<T>`] - Type alias for `std::result::Result<T, TwygError>`
+//!
+//! # Examples
+//!
+//! ```
+//! use twyg::{OptsBuilder, LogLevel};
+//!
+//! // Invalid time format returns ConfigError
+//! let result = OptsBuilder::new()
+//!     .time_format("%invalid")
+//!     .build();
+//! assert!(result.is_err());
+//! ```
 
 use std::io;
 
