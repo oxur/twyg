@@ -16,15 +16,14 @@ edition = "2021"
 name = "twyg"
 
 [dependencies]
-anyhow = "1.0.100"
 chrono = { version = "0.4.42", default-features = false, features = ["clock"] }
-fern = { version = "0.7.1", features = ["colored"] }
-log = "0.4.29"
+log = { version = "0.4.29", features = ["kv", "std"] }
 owo-colors = { version = "4.2.3", features = ["supports-colors"] }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0"
 
 [dev-dependencies]
+anyhow = "1.0.100"
 config = { version = "0.15.19", default-features = false, features = ["yaml"] }
 confyg = "0.3.0"
 serde_json = "1.0"
@@ -46,3 +45,6 @@ name = "from-confyg"
 
 [[example]]
 name = "stderr"
+
+[[example]]
+name = "structured-logging"

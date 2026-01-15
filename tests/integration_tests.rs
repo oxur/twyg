@@ -25,50 +25,52 @@ fn test_setup_with_defaults() {
     // Test with different message formats
     trace!("Message with {} formatting", "args");
     debug!("Number: {}, String: {}", 42, "test");
-    info!("Boolean: {}, Float: {:.2}", true, 3.14);
+    info!("Boolean: {}, Float: {:.2}", true, 12.34);
 }
 
 // The remaining tests verify that Logger can be created and configured
 // without actually initializing the global logger (which can only be done once).
+// We verify logger configuration but don't call dispatch() since the global
+// logger can only be initialized once per process.
 
 #[test]
 fn test_logger_with_trace_level() {
     let opts = OptsBuilder::new().level(LogLevel::Trace).build().unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Trace);
+    assert_eq!(opts.level(), LogLevel::Trace);
 }
 
 #[test]
 fn test_logger_with_debug_level() {
     let opts = OptsBuilder::new().level(LogLevel::Debug).build().unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Debug);
+    assert_eq!(opts.level(), LogLevel::Debug);
 }
 
 #[test]
 fn test_logger_with_info_level() {
     let opts = OptsBuilder::new().level(LogLevel::Info).build().unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Info);
+    assert_eq!(opts.level(), LogLevel::Info);
 }
 
 #[test]
 fn test_logger_with_warn_level() {
     let opts = OptsBuilder::new().level(LogLevel::Warn).build().unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Warn);
+    assert_eq!(opts.level(), LogLevel::Warn);
 }
 
 #[test]
 fn test_logger_with_error_level() {
     let opts = OptsBuilder::new().level(LogLevel::Error).build().unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Error);
+    assert_eq!(opts.level(), LogLevel::Error);
 }
 
 #[test]
@@ -78,9 +80,9 @@ fn test_logger_with_coloured() {
         .level(LogLevel::Debug)
         .build()
         .unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Debug);
+    assert!(opts.coloured());
 }
 
 #[test]
@@ -90,9 +92,9 @@ fn test_logger_with_caller() {
         .level(LogLevel::Debug)
         .build()
         .unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Debug);
+    assert!(opts.report_caller());
 }
 
 #[test]
@@ -102,9 +104,9 @@ fn test_logger_with_stdout() {
         .level(LogLevel::Debug)
         .build()
         .unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Debug);
+    assert_eq!(opts.output(), &Output::Stdout);
 }
 
 #[test]
@@ -114,9 +116,9 @@ fn test_logger_with_stderr() {
         .level(LogLevel::Debug)
         .build()
         .unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Debug);
+    assert_eq!(opts.output(), &Output::Stderr);
 }
 
 #[test]
@@ -126,9 +128,9 @@ fn test_logger_with_custom_time_format() {
         .level(LogLevel::Debug)
         .build()
         .unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Debug);
+    assert_eq!(opts.time_format(), Some("%H:%M:%S"));
 }
 
 #[test]
@@ -141,9 +143,12 @@ fn test_logger_with_all_options() {
         .time_format("%Y-%m-%d %H:%M:%S")
         .build()
         .unwrap();
-    let logger = Logger::new(opts);
-    let result = logger.dispatch();
-    assert!(result.is_ok());
+    let logger = Logger::new(opts.clone());
+    assert_eq!(logger.level(), LogLevel::Trace);
+    assert!(opts.coloured());
+    assert_eq!(opts.output(), &Output::Stdout);
+    assert!(opts.report_caller());
+    assert_eq!(opts.time_format(), Some("%Y-%m-%d %H:%M:%S"));
 }
 
 #[test]

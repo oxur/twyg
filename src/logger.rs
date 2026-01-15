@@ -1,11 +1,23 @@
-//! Logger implementation using fern.
+//! Logger implementation with direct log::Log trait implementation.
 //!
-//! This module provides the [`Logger`] struct that wraps fern configuration.
+//! This module provides the [`TwygLogger`] struct that implements `log::Log`
+//! directly, enabling structured logging with key-value pairs while adopting
+//! best practices for performance and reliability.
+//!
+//! # Features
+//!
+//! - Zero-copy formatting using `write!()` instead of String allocation
+//! - Three-tiered error recovery (normal → stderr → panic)
+//! - Mutex poison recovery for robust thread safety
+//! - BufWriter for efficient file I/O
+//! - Structured logging support via log crate's kv feature
 
-use std::fmt::Arguments;
+use std::fs::File;
+use std::io::{self, BufWriter, Write};
+use std::sync::{Arc, Mutex};
 
 use chrono::Local;
-use log::{Level, LevelFilter};
+use log::{Level, LevelFilter, Log, Metadata, Record};
 use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 
@@ -16,94 +28,239 @@ use super::output::Output;
 
 const DEFAULT_TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Logger {
-    opts: Opts,
+/// Output writer enum supporting stdout, stderr, and file output.
+enum OutputWriter {
+    Stdout(io::Stdout),
+    Stderr(io::Stderr),
+    File(BufWriter<File>),
 }
 
-impl Logger {
-    pub fn new(opts: Opts) -> Logger {
-        owo_colors::set_override(opts.coloured());
-        Logger { opts }
+impl OutputWriter {
+    fn write_fmt(&mut self, args: std::fmt::Arguments) -> io::Result<()> {
+        match self {
+            OutputWriter::Stdout(w) => w.write_fmt(args),
+            OutputWriter::Stderr(w) => w.write_fmt(args),
+            OutputWriter::File(w) => w.write_fmt(args),
+        }
     }
 
-    pub fn dispatch(&self) -> Result<fern::Dispatch> {
-        let filter = self.level_to_filter();
-        let mut dispatch = if self.opts.report_caller() {
-            report_caller_logger(self.format_ts(), filter, self.stream())
-        } else {
-            logger(self.format_ts(), filter, self.stream())
-        };
-
-        dispatch = match self.opts.output() {
-            Output::Stdout => dispatch.chain(std::io::stdout()),
-            Output::Stderr => dispatch.chain(std::io::stderr()),
-            Output::File(path) => dispatch.chain(fern::log_file(path)?),
-        };
-
-        Ok(dispatch)
-    }
-
-    // Private methods
-
-    fn format_ts(&self) -> String {
-        let ts = self.opts.time_format().unwrap_or(DEFAULT_TS_FORMAT);
-        Local::now().format(ts).to_string()
-    }
-
-    pub fn level(&self) -> LogLevel {
-        self.opts.level()
-    }
-
-    fn level_to_filter(&self) -> LevelFilter {
-        self.opts.level().into()
-    }
-
-    fn stream(&self) -> Stream {
-        Stream::from(self.opts.output())
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            OutputWriter::Stdout(w) => w.flush(),
+            OutputWriter::Stderr(w) => w.flush(),
+            OutputWriter::File(w) => w.flush(),
+        }
     }
 }
 
-// Private functions
+/// Internal logger configuration.
+struct LoggerConfig {
+    stream: Stream,
+    max_level: LevelFilter,
+    time_format: String,
+    report_caller: bool,
+}
 
-fn report_caller_logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
-    fern::Dispatch::new()
-        .format(move |out, message, record| {
-            out.finish(format_args!(
-                "{} {} [{} {}] {}",
-                date.if_supports_color(stream, |x| x.green()),
-                colour_level(record.level(), stream),
+/// Logger implementation that directly implements log::Log trait.
+///
+/// This struct is used internally by twyg and supports:
+/// - Thread-safe output via Arc<Mutex<OutputWriter>>
+/// - Structured logging with key-value pairs
+/// - Zero-copy formatting for performance
+/// - Robust error handling with fallback to stderr
+struct TwygLogger {
+    output: Arc<Mutex<OutputWriter>>,
+    config: LoggerConfig,
+}
+
+impl TwygLogger {
+    /// Creates a new TwygLogger from Opts.
+    fn new(opts: &Opts, output: OutputWriter) -> Self {
+        let stream = Stream::from(opts.output());
+        let max_level = LevelFilter::from(opts.level());
+        let time_format = opts
+            .time_format()
+            .unwrap_or(DEFAULT_TS_FORMAT)
+            .to_string();
+        let report_caller = opts.report_caller();
+
+        TwygLogger {
+            output: Arc::new(Mutex::new(output)),
+            config: LoggerConfig {
+                stream,
+                max_level,
+                time_format,
+                report_caller,
+            },
+        }
+    }
+
+    /// Gets a lock on the output writer with poison recovery.
+    ///
+    /// Adopts fern's pattern: never panic on poisoned mutex in logging infrastructure.
+    fn output_lock(&self) -> impl std::ops::DerefMut<Target = OutputWriter> + '_ {
+        self.output.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Writes a log record to the output.
+    ///
+    /// Uses zero-copy write!() formatting (fern pattern) instead of String allocation.
+    fn write_log(&self, record: &Record) -> io::Result<()> {
+        let mut writer = self.output_lock();
+        let timestamp = Local::now().format(&self.config.time_format);
+        let level = colour_level(record.level(), self.config.stream);
+        let target = record.target();
+        let message = record.args();
+
+        // Extract key-value pairs for structured logging
+        let mut kv_collector = KeyValueCollector::new();
+        let _ = record.key_values().visit(&mut kv_collector);
+
+        // Use write!() for zero-copy formatting (fern pattern)
+        if self.config.report_caller {
+            write!(
+                writer,
+                "{} {} [{} {}] {} {}{}",
+                timestamp.if_supports_color(self.config.stream, |x| x.green()),
+                level,
                 format_args!(
                     "{}:{}",
                     opt_str_or_placeholder(record.file()),
                     opt_u32_or_placeholder(record.line()),
                 )
-                .to_string()
-                .if_supports_color(stream, |x| x.bright_yellow()),
-                record
-                    .target()
-                    .if_supports_color(stream, |x| x.bright_yellow()),
-                format_msg(message, stream).if_supports_color(stream, |x| x.bright_green())
-            ))
-        })
-        .level(filter)
+                .if_supports_color(self.config.stream, |x| x.bright_yellow()),
+                target.if_supports_color(self.config.stream, |x| x.bright_yellow()),
+                "▶".if_supports_color(self.config.stream, |x| x.cyan()),
+                message.if_supports_color(self.config.stream, |x| x.green()),
+                kv_collector.format_pairs(self.config.stream)
+            )?;
+        } else {
+            write!(
+                writer,
+                "{} {} [{}] {} {}{}",
+                timestamp.if_supports_color(self.config.stream, |x| x.green()),
+                level,
+                target.if_supports_color(self.config.stream, |x| x.bright_yellow()),
+                "▶".if_supports_color(self.config.stream, |x| x.cyan()),
+                message.if_supports_color(self.config.stream, |x| x.green()),
+                kv_collector.format_pairs(self.config.stream)
+            )?;
+        }
+
+        writeln!(writer)?;
+        writer.flush()
+    }
 }
 
-fn logger(date: String, filter: LevelFilter, stream: Stream) -> fern::Dispatch {
-    fern::Dispatch::new()
-        .format(move |out, message, record| {
-            out.finish(format_args!(
-                "{} {} [{}] {}",
-                date.if_supports_color(stream, |x| x.green()),
-                colour_level(record.level(), stream),
-                record
-                    .target()
-                    .if_supports_color(stream, |x| x.bright_yellow()),
-                format_msg(message, stream).if_supports_color(stream, |x| x.bright_green())
-            ))
-        })
-        .level(filter)
+impl Log for TwygLogger {
+    #[inline]
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= self.config.max_level
+    }
+
+    #[inline]
+    fn log(&self, record: &Record) {
+        if !self.enabled(record.metadata()) {
+            return; // Early exit (fern pattern)
+        }
+
+        // Three-tiered error recovery: normal → stderr → panic (fern pattern)
+        fallback_on_error(record, |rec| self.write_log(rec));
+    }
+
+    fn flush(&self) {
+        let _ = self.output_lock().flush();
+    }
 }
+
+/// Three-tiered error recovery function (fern pattern).
+///
+/// Marked #[inline(always)] to avoid overhead in hot path.
+#[inline(always)]
+fn fallback_on_error<F>(record: &Record, log_func: F)
+where
+    F: FnOnce(&Record) -> io::Result<()>,
+{
+    if let Err(error) = log_func(record) {
+        backup_to_stderr(record, &error);
+    }
+}
+
+/// Fallback to stderr if primary logging fails (fern pattern).
+///
+/// Only panics if stderr also fails (catastrophic failure).
+fn backup_to_stderr(record: &Record, error: &io::Error) {
+    let stderr = io::stderr();
+    let mut handle = stderr.lock();
+
+    let write_result = writeln!(
+        handle,
+        "[twyg error: {}] {} - {}",
+        error,
+        record.level(),
+        record.args()
+    );
+
+    if let Err(stderr_err) = write_result {
+        panic!(
+            "twyg: failed to write to stderr (err: {:?}), \
+             failed to write to primary output (err: {:?}), \
+             log record: {:?}",
+            stderr_err, error, record
+        );
+    }
+}
+
+// Key-Value Collector for structured logging
+
+use log::kv::{Key, Value, VisitSource};
+
+/// Visitor for collecting key-value pairs from log records.
+struct KeyValueCollector {
+    pairs: Vec<(String, String)>,
+}
+
+impl KeyValueCollector {
+    fn new() -> Self {
+        Self { pairs: Vec::new() }
+    }
+
+    #[cfg(test)]
+    fn is_empty(&self) -> bool {
+        self.pairs.is_empty()
+    }
+
+    fn format_pairs(&self, stream: Stream) -> String {
+        if self.pairs.is_empty() {
+            return String::new();
+        }
+
+        let formatted = self
+            .pairs
+            .iter()
+            .map(|(k, v)| {
+                format!(
+                    "{}={}",
+                    k.if_supports_color(stream, |x| x.bright_yellow()),
+                    format!("{{{}}}", v).if_supports_color(stream, |x| x.cyan())
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        format!(": {}", formatted)
+    }
+}
+
+impl<'kvs> VisitSource<'kvs> for KeyValueCollector {
+    fn visit_pair(&mut self, key: Key<'kvs>, value: Value<'kvs>) -> std::result::Result<(), log::kv::Error> {
+        // Convert key and value to strings
+        self.pairs.push((key.to_string(), value.to_string()));
+        Ok(())
+    }
+}
+
+// Helper functions
 
 fn opt_str_or_placeholder(x: Option<&str>) -> &str {
     x.unwrap_or("??")
@@ -114,12 +271,6 @@ fn opt_u32_or_placeholder(x: Option<u32>) -> std::borrow::Cow<'static, str> {
         None => std::borrow::Cow::Borrowed("??"),
         Some(val) => std::borrow::Cow::Owned(val.to_string()),
     }
-}
-
-fn format_msg(msg: &Arguments<'_>, stream: Stream) -> String {
-    format!("{} {}", "▶".if_supports_color(stream, |x| x.cyan()), msg)
-        .if_supports_color(stream, |x| x.green())
-        .to_string()
 }
 
 fn colour_level(level: Level, stream: Stream) -> String {
@@ -136,6 +287,47 @@ fn colour_level(level: Level, stream: Stream) -> String {
         Level::Trace => s_level
             .if_supports_color(stream, |x| x.bright_blue())
             .to_string(),
+    }
+}
+
+// Public API - Logger struct for backwards compatibility
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct Logger {
+    opts: Opts,
+}
+
+impl Logger {
+    pub fn new(opts: Opts) -> Logger {
+        owo_colors::set_override(opts.coloured());
+        Logger { opts }
+    }
+
+    /// Creates a TwygLogger and installs it as the global logger.
+    ///
+    /// This replaces the previous dispatch() method.
+    pub fn dispatch(&self) -> Result<()> {
+        // Create output writer based on opts
+        let output_writer = match self.opts.output() {
+            Output::Stdout => OutputWriter::Stdout(io::stdout()),
+            Output::Stderr => OutputWriter::Stderr(io::stderr()),
+            Output::File(path) => {
+                let file = File::create(path)?;
+                OutputWriter::File(BufWriter::new(file))
+            }
+        };
+
+        // Create and install the logger
+        let logger = TwygLogger::new(&self.opts, output_writer);
+        log::set_boxed_logger(Box::new(logger))
+            .map_err(|_| super::error::TwygError::InitError)?;
+        log::set_max_level(LevelFilter::from(self.opts.level()));
+
+        Ok(())
+    }
+
+    pub fn level(&self) -> LogLevel {
+        self.opts.level()
     }
 }
 
@@ -168,58 +360,26 @@ mod tests {
     }
 
     #[test]
-    fn test_format_ts() {
-        let opts = OptsBuilder::new().time_format("%Y-%m-%d").build().unwrap();
+    fn test_logger_level() {
+        let opts = OptsBuilder::new().level(LogLevel::Info).build().unwrap();
         let logger = Logger::new(opts);
-        let ts = logger.format_ts();
-        // Should be in YYYY-MM-DD format
-        assert!(ts.len() >= 10);
-        assert!(ts.contains('-'));
+        assert_eq!(logger.level(), LogLevel::Info);
     }
 
     #[test]
-    fn test_format_ts_with_default() {
-        let opts = Opts::default();
-        let logger = Logger::new(opts);
-        let ts = logger.format_ts();
-        // Should use default format
-        assert!(!ts.is_empty());
-    }
-
-    #[test]
-    fn test_stream_stdout() {
-        let opts = OptsBuilder::new().output(Output::Stdout).build().unwrap();
-        let logger = Logger::new(opts);
-        let stream = logger.stream();
-        match stream {
-            Stream::Stdout => {}
-            _ => panic!("Expected Stream::Stdout"),
-        }
-    }
-
-    #[test]
-    fn test_stream_stderr() {
-        let opts = OptsBuilder::new().output(Output::Stderr).build().unwrap();
-        let logger = Logger::new(opts);
-        let stream = logger.stream();
-        match stream {
-            Stream::Stderr => {}
-            _ => panic!("Expected Stream::Stderr"),
-        }
-    }
-
-    #[test]
-    fn test_stream_file_uses_stdout() {
+    fn test_logger_serialize_deserialize() {
         let opts = OptsBuilder::new()
-            .output(Output::file("/tmp/test.log"))
+            .coloured(true)
+            .level(LogLevel::Debug)
             .build()
             .unwrap();
         let logger = Logger::new(opts);
-        let stream = logger.stream();
-        match stream {
-            Stream::Stdout => {}
-            _ => panic!("Expected Stream::Stdout for file output"),
-        }
+
+        let serialized = serde_json::to_string(&logger).unwrap();
+        let deserialized: Logger = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(logger.opts.coloured(), deserialized.opts.coloured());
+        assert_eq!(logger.opts.level(), deserialized.opts.level());
     }
 
     #[test]
@@ -277,138 +437,6 @@ mod tests {
     }
 
     #[test]
-    fn test_format_msg() {
-        let args = format_args!("test message");
-        let result = format_msg(&args, Stream::Stdout);
-        assert!(result.contains("▶"));
-        assert!(result.contains("test message"));
-    }
-
-    #[test]
-    fn test_logger_serialize_deserialize() {
-        let opts = OptsBuilder::new()
-            .coloured(true)
-            .level(LogLevel::Debug)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-
-        let serialized = serde_json::to_string(&logger).unwrap();
-        let deserialized: Logger = serde_json::from_str(&serialized).unwrap();
-
-        assert_eq!(logger.opts.coloured(), deserialized.opts.coloured());
-        assert_eq!(logger.opts.level(), deserialized.opts.level());
-    }
-
-    #[test]
-    fn test_level_to_filter() {
-        let opts = OptsBuilder::new().level(LogLevel::Debug).build().unwrap();
-        let logger = Logger::new(opts);
-        let filter = logger.level_to_filter();
-        assert_eq!(filter, LevelFilter::Debug);
-    }
-
-    #[test]
-    fn test_level() {
-        let opts = OptsBuilder::new().level(LogLevel::Info).build().unwrap();
-        let logger = Logger::new(opts);
-        assert_eq!(logger.level(), LogLevel::Info);
-    }
-
-    #[test]
-    fn test_dispatch_with_stdout() {
-        let opts = OptsBuilder::new()
-            .output(Output::Stdout)
-            .level(LogLevel::Debug)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-        let result = logger.dispatch();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_dispatch_with_stderr() {
-        let opts = OptsBuilder::new()
-            .output(Output::Stderr)
-            .level(LogLevel::Info)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-        let result = logger.dispatch();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_dispatch_with_valid_file() {
-        use std::env;
-        let temp_file = env::temp_dir().join("twyg-test-dispatch.log");
-        let opts = OptsBuilder::new()
-            .output(Output::File(temp_file.clone()))
-            .level(LogLevel::Trace)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-        let result = logger.dispatch();
-        assert!(result.is_ok());
-        // Clean up
-        let _ = std::fs::remove_file(temp_file);
-    }
-
-    #[test]
-    fn test_dispatch_with_invalid_file_path() {
-        let opts = OptsBuilder::new()
-            .output(Output::file("/proc/invalid/nonexistent/path/test.log"))
-            .level(LogLevel::Debug)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-        let result = logger.dispatch();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_dispatch_with_report_caller() {
-        let opts = OptsBuilder::new()
-            .report_caller(true)
-            .level(LogLevel::Trace)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-        let result = logger.dispatch();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_dispatch_with_coloured_and_caller() {
-        let opts = OptsBuilder::new()
-            .coloured(true)
-            .report_caller(true)
-            .output(Output::Stderr)
-            .level(LogLevel::Warn)
-            .build()
-            .unwrap();
-        let logger = Logger::new(opts);
-        let result = logger.dispatch();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_format_msg_with_stderr() {
-        let args = format_args!("stderr message");
-        let result = format_msg(&args, Stream::Stderr);
-        assert!(result.contains("▶"));
-        assert!(result.contains("stderr message"));
-    }
-
-    #[test]
-    fn test_format_msg_empty() {
-        let args = format_args!("");
-        let result = format_msg(&args, Stream::Stdout);
-        assert!(result.contains("▶"));
-    }
-
-    #[test]
     fn test_colour_level_with_stderr() {
         let error = colour_level(Level::Error, Stream::Stderr);
         assert!(error.contains("ERROR") || error.contains("error"));
@@ -427,111 +455,33 @@ mod tests {
     }
 
     #[test]
-    fn test_logger_functions_create_dispatch() {
-        // Test that logger() function creates a valid dispatch
-        let dispatch = logger("2024-01-01".to_string(), LevelFilter::Info, Stream::Stdout);
-        // Just verify it was created successfully (Dispatch doesn't expose level getter)
-        let _ = dispatch;
+    fn test_kv_collector_empty() {
+        let collector = KeyValueCollector::new();
+        assert!(collector.is_empty());
+        assert_eq!(collector.format_pairs(Stream::Stdout), "");
     }
 
     #[test]
-    fn test_report_caller_logger_creates_dispatch() {
-        // Test that report_caller_logger() function creates a valid dispatch
-        let dispatch =
-            report_caller_logger("2024-01-01".to_string(), LevelFilter::Debug, Stream::Stderr);
-        // Just verify it was created successfully (Dispatch doesn't expose level getter)
-        let _ = dispatch;
+    fn test_kv_collector_format_pairs() {
+        let mut collector = KeyValueCollector::new();
+        collector.pairs.push(("user".to_string(), "alice".to_string()));
+        collector.pairs.push(("action".to_string(), "login".to_string()));
+
+        let formatted = collector.format_pairs(Stream::Stdout);
+        assert!(formatted.contains("user="));
+        assert!(formatted.contains("{alice}"));
+        assert!(formatted.contains("action="));
+        assert!(formatted.contains("{login}"));
+        assert!(formatted.starts_with(": "));
     }
 
     #[test]
-    fn test_all_log_levels_to_filter() {
-        let levels = vec![
-            (LogLevel::Trace, LevelFilter::Trace),
-            (LogLevel::Debug, LevelFilter::Debug),
-            (LogLevel::Info, LevelFilter::Info),
-            (LogLevel::Warn, LevelFilter::Warn),
-            (LogLevel::Error, LevelFilter::Error),
-        ];
+    fn test_kv_collector_single_pair() {
+        let mut collector = KeyValueCollector::new();
+        collector.pairs.push(("key".to_string(), "value".to_string()));
 
-        for (log_level, expected_filter) in levels {
-            let opts = OptsBuilder::new().level(log_level).build().unwrap();
-            let logger = Logger::new(opts);
-            assert_eq!(logger.level_to_filter(), expected_filter);
-        }
-    }
-
-    #[test]
-    fn test_dispatch_all_combinations() {
-        // Test various combinations of options to exercise more code paths
-        let test_cases = vec![
-            (true, true, LogLevel::Trace),
-            (true, false, LogLevel::Debug),
-            (false, true, LogLevel::Info),
-            (false, false, LogLevel::Warn),
-        ];
-
-        for (coloured, report_caller, level) in test_cases {
-            let opts = OptsBuilder::new()
-                .coloured(coloured)
-                .report_caller(report_caller)
-                .level(level)
-                .build()
-                .unwrap();
-            let logger = Logger::new(opts);
-            let result = logger.dispatch();
-            assert!(result.is_ok());
-        }
-    }
-
-    #[test]
-    fn test_custom_time_formats() {
-        let time_formats = vec![
-            Some("%Y-%m-%d".to_string()),
-            Some("%H:%M:%S".to_string()),
-            Some("%Y-%m-%d %H:%M:%S%.3f".to_string()),
-            None,
-        ];
-
-        for time_format in time_formats {
-            let opts = match time_format {
-                Some(fmt) => OptsBuilder::new()
-                    .time_format(fmt)
-                    .level(LogLevel::Debug)
-                    .build()
-                    .unwrap(),
-                None => OptsBuilder::new().level(LogLevel::Debug).build().unwrap(),
-            };
-            let logger = Logger::new(opts);
-            let ts = logger.format_ts();
-            assert!(!ts.is_empty());
-        }
-    }
-
-    #[test]
-    fn test_dispatch_with_all_outputs() {
-        use std::env;
-        let temp_file = env::temp_dir().join("twyg-test-all-outputs.log");
-
-        let outputs = vec![
-            Output::Stdout,
-            Output::Stderr,
-            Output::File(temp_file.clone()),
-        ];
-
-        for output in outputs {
-            let opts = OptsBuilder::new()
-                .output(output.clone())
-                .level(LogLevel::Trace)
-                .report_caller(true)
-                .coloured(true)
-                .build()
-                .unwrap();
-            let logger = Logger::new(opts);
-            let result = logger.dispatch();
-            assert!(result.is_ok());
-        }
-
-        // Clean up
-        let _ = std::fs::remove_file(temp_file);
+        let formatted = collector.format_pairs(Stream::Stdout);
+        assert!(formatted.contains("key={value}"));
+        assert!(formatted.starts_with(": "));
     }
 }

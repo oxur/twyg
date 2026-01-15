@@ -36,8 +36,8 @@ pub enum TwygError {
     },
 
     /// Failed to initialize the logger.
-    #[error("failed to initialize logger: {0}")]
-    InitError(#[from] log::SetLoggerError),
+    #[error("failed to initialize logger")]
+    InitError,
 
     /// Failed to open or write to log file.
     #[error("failed to open log file: {0}")]
