@@ -180,6 +180,21 @@ run-remaining:
 	@cargo run --example from-confyg-full
 	@echo ""
 	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: from-confyg-env (env var config)               $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@MYAPP_LOGGING_COLOURED=true \
+		MYAPP_LOGGING_OUTPUT=stdout \
+		MYAPP_LOGGING_LEVEL=trace \
+		MYAPP_LOGGING_REPORT_CALLER=true \
+		MYAPP_LOGGING_TIMESTAMP_FORMAT=Simple \
+		MYAPP_LOGGING_PAD_LEVEL=true \
+		MYAPP_LOGGING_PAD_AMOUNT=7 \
+		MYAPP_LOGGING_PAD_SIDE=Left \
+		MYAPP_LOGGING_MSG_SEPARATOR=" :: " \
+		MYAPP_LOGGING_ARROW_CHAR="⇒" \
+		cargo run --example from-confyg-env
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
 	@echo "$(CYAN)║$(RESET)  Example: stderr                                         $(CYAN)║$(RESET)"
 	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
 	@cargo run --example stderr
