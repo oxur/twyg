@@ -36,6 +36,7 @@ help:
 	@echo "  $(YELLOW)make build-release$(RESET)    - Build optimized release library"
 	@echo "  $(YELLOW)make build MODE=release$(RESET) - Build with custom mode"
 	@echo "  $(YELLOW)make examples$(RESET)         - Build all examples"
+	@echo "  $(YELLOW)make run-examples$(RESET)     - Run all examples"
 	@echo ""
 	@echo "$(GREEN)Testing & Quality:$(RESET)"
 	@echo "  $(YELLOW)make test$(RESET)             - Run all tests"
@@ -127,6 +128,47 @@ examples:
 	@echo "$(BLUE)Building examples...$(RESET)"
 	@cargo build --examples
 	@echo "$(GREEN)✓ Examples built$(RESET)"
+
+.PHONY: run-examples
+run-examples:
+	@echo "$(BLUE)Running all examples...$(RESET)"
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: colour-caller                                 $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example colour-caller
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: no-caller                                     $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example no-caller
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: no-colour                                     $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example no-colour
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: from-config                                   $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example from-config
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: from-confyg                                   $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example from-confyg
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: stderr                                        $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example stderr
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: structured-logging                            $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example structured-logging
+	@echo ""
+	@echo "$(GREEN)✓ All examples completed$(RESET)"
 
 # Cleaning targets
 .PHONY: clean
