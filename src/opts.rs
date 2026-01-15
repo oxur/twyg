@@ -591,4 +591,219 @@ mod tests {
         let format = default_ts_format();
         assert_eq!(format, Some("%Y-%m-%d %H:%M:%S".to_string()));
     }
+
+    #[test]
+    fn test_pad_side_default() {
+        assert_eq!(PadSide::default(), PadSide::Right);
+    }
+
+    #[test]
+    fn test_pad_side_eq() {
+        assert_eq!(PadSide::Left, PadSide::Left);
+        assert_eq!(PadSide::Right, PadSide::Right);
+        assert_ne!(PadSide::Left, PadSide::Right);
+    }
+
+    #[test]
+    fn test_pad_side_clone() {
+        let left = PadSide::Left;
+        let cloned = left.clone();
+        assert_eq!(left, cloned);
+    }
+
+    #[test]
+    fn test_pad_side_debug() {
+        let debug_str = format!("{:?}", PadSide::Left);
+        assert!(debug_str.contains("Left"));
+    }
+
+    #[test]
+    fn test_opts_all_getters() {
+        let colors = Colors::default();
+        let opts = OptsBuilder::new()
+            .coloured(true)
+            .output(Output::Stderr)
+            .level(LogLevel::Debug)
+            .report_caller(true)
+            .timestamp_format(TSFormat::TimeOnly)
+            .pad_level(true)
+            .pad_amount(7)
+            .pad_side(PadSide::Left)
+            .msg_separator(" | ")
+            .arrow_char("→")
+            .colors(colors.clone())
+            .build()
+            .unwrap();
+
+        assert!(opts.coloured());
+        assert_eq!(opts.output(), &Output::Stderr);
+        assert_eq!(opts.level(), LogLevel::Debug);
+        assert!(opts.report_caller());
+        assert_eq!(opts.timestamp_format(), &TSFormat::TimeOnly);
+        assert!(opts.pad_level());
+        assert_eq!(opts.pad_amount(), 7);
+        assert_eq!(opts.pad_side(), PadSide::Left);
+        assert_eq!(opts.msg_separator(), " | ");
+        assert_eq!(opts.arrow_char(), "→");
+        assert_eq!(opts.colors(), &colors);
+    }
+
+    #[test]
+    fn test_opts_builder_preset_with_level_padding() {
+        let opts = OptsBuilder::with_level_padding().build().unwrap();
+        assert!(opts.pad_level());
+        assert_eq!(opts.pad_amount(), 5);
+        assert_eq!(opts.pad_side(), PadSide::Right);
+    }
+
+    #[test]
+    fn test_opts_builder_preset_no_caller() {
+        let opts = OptsBuilder::no_caller().build().unwrap();
+        assert!(!opts.report_caller());
+    }
+
+    #[test]
+    fn test_opts_builder_chaining_all_methods() {
+        let opts = OptsBuilder::new()
+            .coloured(false)
+            .output(Output::file("/tmp/test.log"))
+            .level(LogLevel::Trace)
+            .report_caller(false)
+            .timestamp_format(TSFormat::RFC3339)
+            .pad_level(true)
+            .pad_amount(10)
+            .pad_side(PadSide::Left)
+            .msg_separator(" :: ")
+            .arrow_char("»")
+            .colors(Colors::default())
+            .build()
+            .unwrap();
+
+        assert!(!opts.coloured());
+        assert_eq!(opts.level(), LogLevel::Trace);
+        assert_eq!(opts.pad_amount(), 10);
+        assert_eq!(opts.msg_separator(), " :: ");
+        assert_eq!(opts.arrow_char(), "»");
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn test_opts_deprecated_time_format_method() {
+        let opts = OptsBuilder::new()
+            .time_format("%H:%M")
+            .build()
+            .unwrap();
+
+        // The deprecated time_format() method should now return Some
+        assert!(opts.time_format().is_some());
+        let format = opts.time_format().unwrap();
+        assert_eq!(format, "%H:%M");
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn test_opts_builder_deprecated_time_format() {
+        let opts = OptsBuilder::new()
+            .time_format("%Y%m%d")
+            .build()
+            .unwrap();
+
+        // Should have set timestamp_format to Custom variant
+        match opts.timestamp_format() {
+            TSFormat::Custom(s) => assert_eq!(s, "%Y%m%d"),
+            _ => panic!("Expected Custom variant"),
+        }
+    }
+
+    #[test]
+    fn test_validate_time_format_various_formats() {
+        // Test various valid formats
+        assert!(validate_time_format("%Y").is_ok());
+        assert!(validate_time_format("%m").is_ok());
+        assert!(validate_time_format("%d").is_ok());
+        assert!(validate_time_format("%H").is_ok());
+        assert!(validate_time_format("%M").is_ok());
+        assert!(validate_time_format("%S").is_ok());
+        assert!(validate_time_format("%Y-%m-%d %H:%M:%S").is_ok());
+        assert!(validate_time_format("%Y%m%d.%H%M%S").is_ok());
+    }
+
+    #[test]
+    fn test_opts_serialize_with_all_fields() {
+        let opts = OptsBuilder::new()
+            .coloured(true)
+            .output(Output::Stderr)
+            .level(LogLevel::Warn)
+            .report_caller(true)
+            .timestamp_format(TSFormat::Simple)
+            .pad_level(true)
+            .pad_amount(8)
+            .pad_side(PadSide::Left)
+            .msg_separator(" => ")
+            .arrow_char("⇒")
+            .colors(Colors::default())
+            .build()
+            .unwrap();
+
+        let serialized = serde_json::to_string(&opts).unwrap();
+        let deserialized: Opts = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(opts.coloured(), deserialized.coloured());
+        assert_eq!(opts.output(), deserialized.output());
+        assert_eq!(opts.level(), deserialized.level());
+        assert_eq!(opts.report_caller(), deserialized.report_caller());
+        assert_eq!(opts.pad_level(), deserialized.pad_level());
+        assert_eq!(opts.pad_amount(), deserialized.pad_amount());
+        assert_eq!(opts.pad_side(), deserialized.pad_side());
+        assert_eq!(opts.msg_separator(), deserialized.msg_separator());
+        assert_eq!(opts.arrow_char(), deserialized.arrow_char());
+    }
+
+    #[test]
+    fn test_pad_side_serialize_deserialize() {
+        let left = PadSide::Left;
+        let serialized = serde_json::to_string(&left).unwrap();
+        let deserialized: PadSide = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(left, deserialized);
+
+        let right = PadSide::Right;
+        let serialized = serde_json::to_string(&right).unwrap();
+        let deserialized: PadSide = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(right, deserialized);
+    }
+
+    #[test]
+    fn test_opts_default_values_match_new() {
+        let default_opts = Opts::default();
+        let new_opts = Opts::new();
+
+        assert_eq!(default_opts.coloured(), new_opts.coloured());
+        assert_eq!(default_opts.output(), new_opts.output());
+        assert_eq!(default_opts.level(), new_opts.level());
+        assert_eq!(default_opts.report_caller(), new_opts.report_caller());
+        assert_eq!(default_opts.pad_level(), new_opts.pad_level());
+        assert_eq!(default_opts.pad_amount(), new_opts.pad_amount());
+        assert_eq!(default_opts.pad_side(), new_opts.pad_side());
+    }
+
+    #[test]
+    fn test_opts_builder_multiple_builds() {
+        let builder = OptsBuilder::new()
+            .level(LogLevel::Debug)
+            .coloured(true);
+
+        // Build multiple times from cloned builder
+        let opts1 = builder.clone().build().unwrap();
+        let opts2 = builder.clone().build().unwrap();
+
+        assert_eq!(opts1.level(), opts2.level());
+        assert_eq!(opts1.coloured(), opts2.coloured());
+    }
+
+    #[test]
+    fn test_default_helper_functions() {
+        assert_eq!(default_pad_amount(), 5);
+        assert_eq!(default_msg_separator(), ": ");
+        assert_eq!(default_arrow_char(), "▶");
+    }
 }

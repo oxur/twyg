@@ -734,4 +734,465 @@ mod tests {
         assert!(formatted.contains("{"));
         assert!(formatted.contains("}"));
     }
+
+    #[test]
+    fn test_output_writer_stdout() {
+        let mut writer = OutputWriter::Stdout(io::stdout());
+
+        // Test write_fmt
+        let result = writer.write_fmt(format_args!("test"));
+        assert!(result.is_ok());
+
+        // Test flush
+        let flush_result = writer.flush();
+        assert!(flush_result.is_ok());
+    }
+
+    #[test]
+    fn test_output_writer_stderr() {
+        let mut writer = OutputWriter::Stderr(io::stderr());
+
+        // Test write_fmt
+        let result = writer.write_fmt(format_args!("test"));
+        assert!(result.is_ok());
+
+        // Test flush
+        let flush_result = writer.flush();
+        assert!(flush_result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_enabled() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Info)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Test enabled() with different levels
+        assert!(logger.enabled(&Metadata::builder().level(Level::Error).build()));
+        assert!(logger.enabled(&Metadata::builder().level(Level::Warn).build()));
+        assert!(logger.enabled(&Metadata::builder().level(Level::Info).build()));
+        assert!(!logger.enabled(&Metadata::builder().level(Level::Debug).build()));
+        assert!(!logger.enabled(&Metadata::builder().level(Level::Trace).build()));
+    }
+
+    #[test]
+    fn test_twyg_logger_flush() {
+        let opts = OptsBuilder::new().build().unwrap();
+
+        let output = OutputWriter::Stderr(io::stderr());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Test flush doesn't panic
+        logger.flush();
+    }
+
+    #[test]
+    fn test_format_level_with_none_colors() {
+        use crate::color::Colors;
+
+        // Create Colors with all None values
+        let empty_colors = Colors {
+            timestamp: None,
+            level_trace: None,
+            level_debug: None,
+            level_info: None,
+            level_warn: None,
+            level_error: None,
+            message: None,
+            arrow: None,
+            caller_file: None,
+            caller_line: None,
+            target: None,
+            attr_key: None,
+            attr_value: None,
+        };
+
+        // Should return uncolored level string
+        let formatted = format_level(
+            Level::Info,
+            &empty_colors,
+            false,
+            5,
+            PadSide::Right,
+            Stream::Stdout,
+        );
+        assert_eq!(formatted, "INFO");
+    }
+
+    #[test]
+    fn test_format_level_with_padding_and_none_color() {
+        use crate::color::Colors;
+
+        let empty_colors = Colors {
+            timestamp: None,
+            level_trace: None,
+            level_debug: None,
+            level_info: None,
+            level_warn: None,
+            level_error: None,
+            message: None,
+            arrow: None,
+            caller_file: None,
+            caller_line: None,
+            target: None,
+            attr_key: None,
+            attr_value: None,
+        };
+
+        // With padding but no color
+        let formatted = format_level(
+            Level::Warn,
+            &empty_colors,
+            true,
+            7,
+            PadSide::Left,
+            Stream::Stdout,
+        );
+        assert_eq!(formatted, "   WARN");
+    }
+
+    #[test]
+    fn test_kv_collector_visit_pair() {
+        use log::kv::{Key, Value};
+
+        let mut collector = KeyValueCollector::new();
+
+        // Test visit_pair method
+        let key = Key::from_str("test_key");
+        let value = Value::from_debug(&42);
+
+        let result = collector.visit_pair(key, value);
+        assert!(result.is_ok());
+        assert!(!collector.is_empty());
+        assert_eq!(collector.pairs.len(), 1);
+        assert_eq!(collector.pairs[0].0, "test_key");
+    }
+
+    #[test]
+    fn test_kv_collector_multiple_visits() {
+        use log::kv::{Key, Value};
+
+        let mut collector = KeyValueCollector::new();
+
+        // Add multiple pairs
+        collector.visit_pair(Key::from_str("key1"), Value::from_debug(&"value1")).unwrap();
+        collector.visit_pair(Key::from_str("key2"), Value::from_debug(&123)).unwrap();
+        collector.visit_pair(Key::from_str("key3"), Value::from_debug(&true)).unwrap();
+
+        assert_eq!(collector.pairs.len(), 3);
+        assert_eq!(collector.pairs[0].0, "key1");
+        assert_eq!(collector.pairs[1].0, "key2");
+        assert_eq!(collector.pairs[2].0, "key3");
+    }
+
+    #[test]
+    fn test_kv_collector_format_with_custom_separator() {
+        let mut collector = KeyValueCollector::new();
+        collector.pairs.push(("user".to_string(), "bob".to_string()));
+
+        let opts = OptsBuilder::new()
+            .msg_separator(" | ")
+            .build()
+            .unwrap();
+
+        let config = LoggerConfig {
+            stream: Stream::Stdout,
+            max_level: LevelFilter::from(opts.level()),
+            timestamp_format: opts.timestamp_format().clone(),
+            report_caller: opts.report_caller(),
+            pad_level: opts.pad_level(),
+            pad_amount: opts.pad_amount(),
+            pad_side: opts.pad_side(),
+            msg_separator: opts.msg_separator().to_string(),
+            arrow_char: opts.arrow_char().to_string(),
+            colors: opts.colors().clone(),
+        };
+
+        let formatted = collector.format_pairs(&config);
+        assert!(formatted.starts_with(" | "));
+    }
+
+    #[test]
+    fn test_kv_collector_format_with_none_colors() {
+        use crate::color::Colors;
+
+        let mut collector = KeyValueCollector::new();
+        collector.pairs.push(("key".to_string(), "val".to_string()));
+
+        let empty_colors = Colors {
+            timestamp: None,
+            level_trace: None,
+            level_debug: None,
+            level_info: None,
+            level_warn: None,
+            level_error: None,
+            message: None,
+            arrow: None,
+            caller_file: None,
+            caller_line: None,
+            target: None,
+            attr_key: None,
+            attr_value: None,
+        };
+
+        let config = LoggerConfig {
+            stream: Stream::Stdout,
+            max_level: LevelFilter::Info,
+            timestamp_format: TSFormat::default(),
+            report_caller: false,
+            pad_level: false,
+            pad_amount: 5,
+            pad_side: PadSide::Right,
+            msg_separator: ": ".to_string(),
+            arrow_char: "▶".to_string(),
+            colors: empty_colors,
+        };
+
+        let formatted = collector.format_pairs(&config);
+        // Without colors, should still have structure
+        assert!(formatted.contains("key={val}"));
+    }
+
+    #[test]
+    fn test_logger_default() {
+        let logger = Logger::default();
+        assert_eq!(logger.opts.level(), LogLevel::Error);
+    }
+
+    #[test]
+    fn test_format_level_all_levels_with_stderr() {
+        let colors = Colors::default();
+
+        // Test with Stream::Stderr instead of Stdout
+        let error = format_level(Level::Error, &colors, false, 5, PadSide::Right, Stream::Stderr);
+        assert!(error.contains("ERROR") || error.contains("error"));
+
+        let trace = format_level(Level::Trace, &colors, false, 5, PadSide::Right, Stream::Stderr);
+        assert!(trace.contains("TRACE") || trace.contains("trace"));
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_with_caller() {
+        // Test write_log with report_caller = true
+        let opts = OptsBuilder::new()
+            .report_caller(true)
+            .level(LogLevel::Info)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Create a test record
+        let record = log::Record::builder()
+            .level(Level::Info)
+            .target("test_target")
+            .file(Some("test.rs"))
+            .line(Some(42))
+            .args(format_args!("test message"))
+            .build();
+
+        // write_log should succeed
+        let result = logger.write_log(&record);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_without_caller() {
+        // Test write_log with report_caller = false
+        let opts = OptsBuilder::new()
+            .report_caller(false)
+            .level(LogLevel::Debug)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stderr(io::stderr());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Create a test record
+        let record = log::Record::builder()
+            .level(Level::Debug)
+            .target("test_module")
+            .args(format_args!("debug message"))
+            .build();
+
+        // write_log should succeed
+        let result = logger.write_log(&record);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_with_none_file_line() {
+        // Test with None file and line
+        let opts = OptsBuilder::new()
+            .report_caller(true)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Create record without file/line
+        let record = log::Record::builder()
+            .level(Level::Warn)
+            .target("test")
+            .args(format_args!("warning"))
+            .build();
+
+        // Should use placeholder "??"
+        let result = logger.write_log(&record);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_all_levels() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Test all log levels
+        for level in [Level::Error, Level::Warn, Level::Info, Level::Debug, Level::Trace] {
+            let record = log::Record::builder()
+                .level(level)
+                .target("test")
+                .args(format_args!("message"))
+                .build();
+
+            let result = logger.write_log(&record);
+            assert!(result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_with_padding() {
+        let opts = OptsBuilder::new()
+            .pad_level(true)
+            .pad_amount(7)
+            .pad_side(PadSide::Left)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        let record = log::Record::builder()
+            .level(Level::Info)
+            .target("test")
+            .args(format_args!("padded message"))
+            .build();
+
+        let result = logger.write_log(&record);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_with_custom_arrow() {
+        let opts = OptsBuilder::new()
+            .arrow_char("→")
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stderr(io::stderr());
+        let logger = TwygLogger::new(&opts, output);
+
+        let record = log::Record::builder()
+            .level(Level::Info)
+            .target("test")
+            .args(format_args!("custom arrow"))
+            .build();
+
+        let result = logger.write_log(&record);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_write_log_with_none_colors() {
+        use crate::color::Colors;
+
+        let empty_colors = Colors {
+            timestamp: None,
+            level_trace: None,
+            level_debug: None,
+            level_info: None,
+            level_warn: None,
+            level_error: None,
+            message: None,
+            arrow: None,
+            caller_file: None,
+            caller_line: None,
+            target: None,
+            attr_key: None,
+            attr_value: None,
+        };
+
+        let opts = OptsBuilder::new()
+            .colors(empty_colors)
+            .report_caller(true)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        let record = log::Record::builder()
+            .level(Level::Info)
+            .target("test")
+            .file(Some("test.rs"))
+            .line(Some(123))
+            .args(format_args!("no colors"))
+            .build();
+
+        let result = logger.write_log(&record);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_output_lock() {
+        let opts = OptsBuilder::new().build().unwrap();
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // Test that output_lock() works
+        let mut lock = logger.output_lock();
+        let result = lock.write_fmt(format_args!("test"));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_twyg_logger_with_different_timestamp_formats() {
+        use crate::timestamp::TSFormat;
+
+        for format in [
+            TSFormat::RFC3339,
+            TSFormat::Standard,
+            TSFormat::Simple,
+            TSFormat::TimeOnly,
+            TSFormat::Custom("%H:%M".to_string()),
+        ] {
+            let opts = OptsBuilder::new()
+                .timestamp_format(format)
+                .build()
+                .unwrap();
+
+            let output = OutputWriter::Stdout(io::stdout());
+            let logger = TwygLogger::new(&opts, output);
+
+            let record = log::Record::builder()
+                .level(Level::Info)
+                .target("test")
+                .args(format_args!("timestamp test"))
+                .build();
+
+            let result = logger.write_log(&record);
+            assert!(result.is_ok());
+        }
+    }
 }
