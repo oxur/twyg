@@ -14,19 +14,14 @@ use super::timestamp::TSFormat;
 const DEFAULT_TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
 /// Side to pad level strings.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PadSide {
     /// Pad on the left (right-align)
     Left,
 
     /// Pad on the right (left-align)
+    #[default]
     Right,
-}
-
-impl Default for PadSide {
-    fn default() -> Self {
-        Self::Right
-    }
 }
 
 /// Logger configuration options.

@@ -5,12 +5,13 @@
 use serde::{Deserialize, Serialize};
 
 /// Timestamp format presets.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TSFormat {
     /// RFC3339: "2006-01-02T15:04:05Z07:00"
     RFC3339,
 
     /// Standard: "2006-01-02 15:04:05"
+    #[default]
     Standard,
 
     /// Simple: "20060102.150405"
@@ -21,12 +22,6 @@ pub enum TSFormat {
 
     /// Custom chrono format string
     Custom(String),
-}
-
-impl Default for TSFormat {
-    fn default() -> Self {
-        Self::Standard
-    }
 }
 
 impl TSFormat {

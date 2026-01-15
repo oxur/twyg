@@ -8,9 +8,10 @@ use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 
 /// Color attribute for terminal output.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ColorAttribute {
     /// No color (transparent/reset)
+    #[default]
     Reset,
 
     // Standard colors
@@ -32,12 +33,6 @@ pub enum ColorAttribute {
     HiMagenta,
     HiCyan,
     HiWhite,
-}
-
-impl Default for ColorAttribute {
-    fn default() -> Self {
-        Self::Reset
-    }
 }
 
 impl ColorAttribute {
