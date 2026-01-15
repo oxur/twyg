@@ -14,28 +14,28 @@ fn main() {
     let mut colors = Colors::default();
 
     // Bright cyan timestamp (instead of default green)
-    colors.timestamp = Some(Color::fg(ColorAttribute::HiCyan));
+    colors.timestamp = Some(Color::fg(ColorAttribute::HiMagenta));
 
     // Dramatically different level colors with backgrounds
-    colors.level_error = Some(Color::new(ColorAttribute::HiWhite, ColorAttribute::Red));
+    colors.level_error = Some(Color::new(ColorAttribute::HiWhite, ColorAttribute::HiRed));
     colors.level_warn = Some(Color::new(ColorAttribute::Black, ColorAttribute::HiYellow));
-    colors.level_info = Some(Color::new(ColorAttribute::HiWhite, ColorAttribute::Blue));
+    colors.level_info = Some(Color::new(ColorAttribute::HiBlack, ColorAttribute::Blue));
     colors.level_debug = Some(Color::fg(ColorAttribute::HiMagenta));
-    colors.level_trace = Some(Color::new(ColorAttribute::Yellow, ColorAttribute::Magenta));
+    colors.level_trace = Some(Color::new(ColorAttribute::Black, ColorAttribute::Magenta));
 
     // Bright white message text (highly visible)
-    colors.message = Some(Color::fg(ColorAttribute::HiWhite));
+    colors.message = Some(Color::fg(ColorAttribute::HiYellow));
 
     // Yellow arrow separator (warm accent)
-    colors.arrow = Some(Color::fg(ColorAttribute::Yellow));
+    colors.arrow = Some(Color::fg(ColorAttribute::HiRed));
 
     // Caller information in contrasting colors
     colors.caller_file = Some(Color::fg(ColorAttribute::Cyan));
     colors.target = Some(Color::fg(ColorAttribute::HiGreen));
 
     // Structured logging with vibrant colors
-    colors.attr_key = Some(Color::fg(ColorAttribute::Cyan));
-    colors.attr_value = Some(Color::fg(ColorAttribute::HiGreen));
+    colors.attr_key = Some(Color::fg(ColorAttribute::Blue));
+    colors.attr_value = Some(Color::fg(ColorAttribute::Red));
 
     let opts = OptsBuilder::new()
         .coloured(true)
@@ -53,9 +53,6 @@ fn main() {
 
     twyg::setup(opts).unwrap();
 
-    println!("\n=== Fine-Grained Colors Example ===\n");
-    println!("Demonstrating custom colors, padding, and separators:\n");
-
     log::trace!("This is a trace message with custom magenta color");
     log::debug!("This is a debug message with custom cyan color");
     log::info!("This is an info message with custom bright green color");
@@ -66,6 +63,4 @@ fn main() {
     log::info!(user = "alice", action = "login"; "User logged in");
     log::warn!(temperature = 85, threshold = 80; "Temperature warning");
     log::error!(code = 500, endpoint = "/api/data"; "API request failed");
-
-    println!("\n=== Example Complete ===\n");
 }

@@ -191,7 +191,7 @@ impl Opts {
     }
 
     /// Returns the time format string (deprecated, for backward compatibility).
-    #[deprecated(since = "0.7.0", note = "Use timestamp_format() instead")]
+    #[deprecated(since = "0.6.1", note = "Use timestamp_format() instead")]
     pub fn time_format(&self) -> Option<&str> {
         match &self.timestamp_format {
             TSFormat::Custom(s) => Some(s.as_str()),
@@ -346,7 +346,7 @@ impl OptsBuilder {
     ///     .build()
     ///     .unwrap();
     /// ```
-    #[deprecated(since = "0.7.0", note = "Use timestamp_format() instead")]
+    #[deprecated(since = "0.6.1", note = "Use timestamp_format() instead")]
     pub fn time_format(mut self, format: impl Into<String>) -> Self {
         self.timestamp_format = TSFormat::Custom(format.into());
         self

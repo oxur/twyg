@@ -152,6 +152,11 @@ run-primary:
 	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
 	@cargo run --example no-colour
 	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: fine-grained-colors                            $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example fine-grained-colors
+	@echo ""
 
 run-remaining:
 	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
