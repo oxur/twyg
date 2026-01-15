@@ -60,39 +60,12 @@ fn main() -> Result<()> {
         std::process::exit(1);
     }
 
-    println!("Loading configuration from environment variables (MYAPP_ prefix)...\n");
-
     // Build configuration from environment variables using envy
     // We deserialize directly into Opts using the MYAPP_LOGGING_ prefix
     let logging: Opts = envy::prefixed("MYAPP_LOGGING_").from_env()?;
     let cfg = AppConfig {
         myapp: MyApp { logging },
     };
-
-    println!("Configuration loaded successfully!");
-    println!("Features enabled:");
-    println!("  • Colored output: {}", cfg.myapp.logging.coloured());
-    println!("  • Report caller: {}", cfg.myapp.logging.report_caller());
-    println!(
-        "  • Level padding: {} (amount: {}, side: {:?})",
-        cfg.myapp.logging.pad_level(),
-        cfg.myapp.logging.pad_amount(),
-        cfg.myapp.logging.pad_side()
-    );
-    println!(
-        "  • Message separator: {:?} (note: different from TOML config)",
-        cfg.myapp.logging.msg_separator()
-    );
-    println!(
-        "  • Arrow character: {:?} (note: different from TOML config)",
-        cfg.myapp.logging.arrow_char()
-    );
-    println!(
-        "  • Timestamp format: {:?}",
-        cfg.myapp.logging.timestamp_format()
-    );
-    println!("\nNote: Compare output with from-confyg-full to see visual differences!");
-    println!();
 
     demo::logs_sample(cfg.myapp.logging);
     Ok(())
