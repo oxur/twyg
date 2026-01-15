@@ -1,0 +1,74 @@
+# Comprehensive twyg configuration demonstrating all available options
+#
+# This configuration file showcases every available setting for the twyg logger.
+# Use this as a reference for all configuration possibilities.
+
+[logging]
+# Master color toggle - set to false to disable all colors
+coloured = true
+
+# Output destination: "stdout", "stderr", or a file path
+output = "stdout"
+
+# Log level threshold: "trace", "debug", "info", "warn", "error"
+level = "trace"
+
+# Include file name and line number in log output
+report_caller = true
+
+# Timestamp format options:
+# - "Standard" -> "%Y-%m-%d %H:%M:%S"
+# - "RFC3339" -> "%Y-%m-%dT%H:%M:%S%z"
+# - "Simple" -> "%Y%m%d.%H%M%S"
+# - "TimeOnly" -> "%H:%M:%S"
+# - Custom -> any chrono format string
+timestamp_format = { Custom = "%Y-%m-%d %H:%M:%S%.3f" }
+
+# Level padding configuration
+pad_level = true
+pad_amount = 7
+pad_side = "Right"  # "Left" or "Right"
+
+# Message separator between message and key-value pairs
+msg_separator = " | "
+
+# Arrow character used as separator (default: "▶")
+arrow_char = "→"
+
+# Fine-grained color configuration
+# Each color field requires both fg (foreground) and bg (background).
+# Use "Reset" for transparent/no color on either field.
+# Omit entire field to use default color for that component.
+#
+# Available colors:
+#   Reset, Black, Red, Green, Yellow, Blue, Magenta, Cyan, White,
+#   HiBlack, HiRed, HiGreen, HiYellow, HiBlue, HiMagenta, HiCyan, HiWhite
+
+[logging.colors]
+# Timestamp color (default: Green)
+timestamp = { fg = "HiBlack", bg = "Reset" }
+
+# Log level colors (each with custom foreground, transparent background)
+level_trace = { fg = "HiMagenta", bg = "Reset" }
+level_debug = { fg = "HiCyan", bg = "Reset" }
+level_info = { fg = "HiGreen", bg = "Reset" }
+level_warn = { fg = "HiYellow", bg = "Reset" }
+# Example with colored background for errors
+level_error = { fg = "White", bg = "Red" }
+
+# Message text color (default: Green)
+message = { fg = "Cyan", bg = "Reset" }
+
+# Arrow separator color (default: Cyan)
+arrow = { fg = "Magenta", bg = "Reset" }
+
+# Caller information colors
+caller_file = { fg = "HiYellow", bg = "Reset" }
+caller_line = { fg = "Yellow", bg = "Reset" }
+
+# Target/module name color (default: HiYellow)
+target = { fg = "HiBlue", bg = "Reset" }
+
+# Structured logging key-value pair colors
+attr_key = { fg = "Yellow", bg = "Reset" }
+attr_value = { fg = "HiCyan", bg = "Reset" }

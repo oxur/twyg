@@ -175,6 +175,11 @@ run-remaining:
 	@cargo run --example from-confyg
 	@echo ""
 	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║$(RESET)  Example: from-confyg-full (comprehensive config)        $(CYAN)║$(RESET)"
+	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
+	@cargo run --example from-confyg-full
+	@echo ""
+	@echo "$(CYAN)╔══════════════════════════════════════════════════════════╗$(RESET)"
 	@echo "$(CYAN)║$(RESET)  Example: stderr                                         $(CYAN)║$(RESET)"
 	@echo "$(CYAN)╚══════════════════════════════════════════════════════════╝$(RESET)"
 	@cargo run --example stderr
