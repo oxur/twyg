@@ -763,10 +763,7 @@ mod tests {
 
     #[test]
     fn test_twyg_logger_enabled() {
-        let opts = OptsBuilder::new()
-            .level(LogLevel::Info)
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().level(LogLevel::Info).build().unwrap();
 
         let output = OutputWriter::Stdout(io::stdout());
         let logger = TwygLogger::new(&opts, output);
@@ -879,9 +876,15 @@ mod tests {
         let mut collector = KeyValueCollector::new();
 
         // Add multiple pairs
-        collector.visit_pair(Key::from_str("key1"), Value::from_debug(&"value1")).unwrap();
-        collector.visit_pair(Key::from_str("key2"), Value::from_debug(&123)).unwrap();
-        collector.visit_pair(Key::from_str("key3"), Value::from_debug(&true)).unwrap();
+        collector
+            .visit_pair(Key::from_str("key1"), Value::from_debug(&"value1"))
+            .unwrap();
+        collector
+            .visit_pair(Key::from_str("key2"), Value::from_debug(&123))
+            .unwrap();
+        collector
+            .visit_pair(Key::from_str("key3"), Value::from_debug(&true))
+            .unwrap();
 
         assert_eq!(collector.pairs.len(), 3);
         assert_eq!(collector.pairs[0].0, "key1");
@@ -892,12 +895,11 @@ mod tests {
     #[test]
     fn test_kv_collector_format_with_custom_separator() {
         let mut collector = KeyValueCollector::new();
-        collector.pairs.push(("user".to_string(), "bob".to_string()));
+        collector
+            .pairs
+            .push(("user".to_string(), "bob".to_string()));
 
-        let opts = OptsBuilder::new()
-            .msg_separator(" | ")
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().msg_separator(" | ").build().unwrap();
 
         let config = LoggerConfig {
             stream: Stream::Stdout,
@@ -968,10 +970,24 @@ mod tests {
         let colors = Colors::default();
 
         // Test with Stream::Stderr instead of Stdout
-        let error = format_level(Level::Error, &colors, false, 5, PadSide::Right, Stream::Stderr);
+        let error = format_level(
+            Level::Error,
+            &colors,
+            false,
+            5,
+            PadSide::Right,
+            Stream::Stderr,
+        );
         assert!(error.contains("ERROR") || error.contains("error"));
 
-        let trace = format_level(Level::Trace, &colors, false, 5, PadSide::Right, Stream::Stderr);
+        let trace = format_level(
+            Level::Trace,
+            &colors,
+            false,
+            5,
+            PadSide::Right,
+            Stream::Stderr,
+        );
         assert!(trace.contains("TRACE") || trace.contains("trace"));
     }
 
@@ -1028,10 +1044,7 @@ mod tests {
     #[test]
     fn test_twyg_logger_write_log_with_none_file_line() {
         // Test with None file and line
-        let opts = OptsBuilder::new()
-            .report_caller(true)
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().report_caller(true).build().unwrap();
 
         let output = OutputWriter::Stdout(io::stdout());
         let logger = TwygLogger::new(&opts, output);
@@ -1050,16 +1063,19 @@ mod tests {
 
     #[test]
     fn test_twyg_logger_write_log_all_levels() {
-        let opts = OptsBuilder::new()
-            .level(LogLevel::Trace)
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().level(LogLevel::Trace).build().unwrap();
 
         let output = OutputWriter::Stdout(io::stdout());
         let logger = TwygLogger::new(&opts, output);
 
         // Test all log levels
-        for level in [Level::Error, Level::Warn, Level::Info, Level::Debug, Level::Trace] {
+        for level in [
+            Level::Error,
+            Level::Warn,
+            Level::Info,
+            Level::Debug,
+            Level::Trace,
+        ] {
             let record = log::Record::builder()
                 .level(level)
                 .target("test")
@@ -1095,10 +1111,7 @@ mod tests {
 
     #[test]
     fn test_twyg_logger_write_log_with_custom_arrow() {
-        let opts = OptsBuilder::new()
-            .arrow_char("→")
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().arrow_char("→").build().unwrap();
 
         let output = OutputWriter::Stderr(io::stderr());
         let logger = TwygLogger::new(&opts, output);
@@ -1177,10 +1190,7 @@ mod tests {
             TSFormat::TimeOnly,
             TSFormat::Custom("%H:%M".to_string()),
         ] {
-            let opts = OptsBuilder::new()
-                .timestamp_format(format)
-                .build()
-                .unwrap();
+            let opts = OptsBuilder::new().timestamp_format(format).build().unwrap();
 
             let output = OutputWriter::Stdout(io::stdout());
             let logger = TwygLogger::new(&opts, output);

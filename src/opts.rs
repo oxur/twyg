@@ -689,10 +689,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_opts_deprecated_time_format_method() {
-        let opts = OptsBuilder::new()
-            .time_format("%H:%M")
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().time_format("%H:%M").build().unwrap();
 
         // The deprecated time_format() method should now return Some
         assert!(opts.time_format().is_some());
@@ -703,10 +700,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_opts_builder_deprecated_time_format() {
-        let opts = OptsBuilder::new()
-            .time_format("%Y%m%d")
-            .build()
-            .unwrap();
+        let opts = OptsBuilder::new().time_format("%Y%m%d").build().unwrap();
 
         // Should have set timestamp_format to Custom variant
         match opts.timestamp_format() {
@@ -788,9 +782,7 @@ mod tests {
 
     #[test]
     fn test_opts_builder_multiple_builds() {
-        let builder = OptsBuilder::new()
-            .level(LogLevel::Debug)
-            .coloured(true);
+        let builder = OptsBuilder::new().level(LogLevel::Debug).coloured(true);
 
         // Build multiple times from cloned builder
         let opts1 = builder.clone().build().unwrap();

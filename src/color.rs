@@ -385,21 +385,39 @@ mod tests {
         assert!(!ColorAttribute::Black.apply(text, Stream::Stdout).is_empty());
         assert!(!ColorAttribute::Red.apply(text, Stream::Stdout).is_empty());
         assert!(!ColorAttribute::Green.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Yellow.apply(text, Stream::Stdout).is_empty());
+        assert!(!ColorAttribute::Yellow
+            .apply(text, Stream::Stdout)
+            .is_empty());
         assert!(!ColorAttribute::Blue.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Magenta.apply(text, Stream::Stdout).is_empty());
+        assert!(!ColorAttribute::Magenta
+            .apply(text, Stream::Stdout)
+            .is_empty());
         assert!(!ColorAttribute::Cyan.apply(text, Stream::Stdout).is_empty());
         assert!(!ColorAttribute::White.apply(text, Stream::Stdout).is_empty());
 
         // Test all bright colors
-        assert!(!ColorAttribute::HiBlack.apply(text, Stream::Stdout).is_empty());
+        assert!(!ColorAttribute::HiBlack
+            .apply(text, Stream::Stdout)
+            .is_empty());
         assert!(!ColorAttribute::HiRed.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiGreen.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiYellow.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiBlue.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiMagenta.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiCyan.apply(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiWhite.apply(text, Stream::Stdout).is_empty());
+        assert!(!ColorAttribute::HiGreen
+            .apply(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiYellow
+            .apply(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiBlue
+            .apply(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiMagenta
+            .apply(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiCyan
+            .apply(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiWhite
+            .apply(text, Stream::Stdout)
+            .is_empty());
     }
 
     #[test]
@@ -411,24 +429,56 @@ mod tests {
         assert_eq!(ColorAttribute::Reset.apply_bg(text, Stream::Stdout), "test");
 
         // Test all standard background colors
-        assert!(!ColorAttribute::Black.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Red.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Green.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Yellow.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Blue.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Magenta.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::Cyan.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::White.apply_bg(text, Stream::Stdout).is_empty());
+        assert!(!ColorAttribute::Black
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::Red
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::Green
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::Yellow
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::Blue
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::Magenta
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::Cyan
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::White
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
 
         // Test all bright background colors
-        assert!(!ColorAttribute::HiBlack.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiRed.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiGreen.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiYellow.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiBlue.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiMagenta.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiCyan.apply_bg(text, Stream::Stdout).is_empty());
-        assert!(!ColorAttribute::HiWhite.apply_bg(text, Stream::Stdout).is_empty());
+        assert!(!ColorAttribute::HiBlack
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiRed
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiGreen
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiYellow
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiBlue
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiMagenta
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiCyan
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
+        assert!(!ColorAttribute::HiWhite
+            .apply_bg(text, Stream::Stdout)
+            .is_empty());
     }
 
     #[test]
@@ -437,8 +487,12 @@ mod tests {
         let text = "test";
 
         assert!(!ColorAttribute::Red.apply(text, Stream::Stderr).is_empty());
-        assert!(!ColorAttribute::Green.apply_bg(text, Stream::Stderr).is_empty());
-        assert!(!ColorAttribute::HiYellow.apply(text, Stream::Stderr).is_empty());
+        assert!(!ColorAttribute::Green
+            .apply_bg(text, Stream::Stderr)
+            .is_empty());
+        assert!(!ColorAttribute::HiYellow
+            .apply(text, Stream::Stderr)
+            .is_empty());
     }
 
     #[test]

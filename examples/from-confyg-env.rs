@@ -44,8 +44,7 @@ pub struct AppConfig {
 
 fn main() -> Result<()> {
     // Check if MYAPP variables are set
-    let has_config = env::vars()
-        .any(|(key, _)| key.starts_with("MYAPP_LOGGING_"));
+    let has_config = env::vars().any(|(key, _)| key.starts_with("MYAPP_LOGGING_"));
 
     if !has_config {
         eprintln!("❌ No MYAPP_LOGGING_* environment variables found!");
@@ -67,22 +66,31 @@ fn main() -> Result<()> {
     // We deserialize directly into Opts using the MYAPP_LOGGING_ prefix
     let logging: Opts = envy::prefixed("MYAPP_LOGGING_").from_env()?;
     let cfg = AppConfig {
-        myapp: MyApp { logging }
+        myapp: MyApp { logging },
     };
 
     println!("Configuration loaded successfully!");
     println!("Features enabled:");
     println!("  • Colored output: {}", cfg.myapp.logging.coloured());
     println!("  • Report caller: {}", cfg.myapp.logging.report_caller());
-    println!("  • Level padding: {} (amount: {}, side: {:?})",
-             cfg.myapp.logging.pad_level(),
-             cfg.myapp.logging.pad_amount(),
-             cfg.myapp.logging.pad_side());
-    println!("  • Message separator: {:?} (note: different from TOML config)",
-             cfg.myapp.logging.msg_separator());
-    println!("  • Arrow character: {:?} (note: different from TOML config)",
-             cfg.myapp.logging.arrow_char());
-    println!("  • Timestamp format: {:?}", cfg.myapp.logging.timestamp_format());
+    println!(
+        "  • Level padding: {} (amount: {}, side: {:?})",
+        cfg.myapp.logging.pad_level(),
+        cfg.myapp.logging.pad_amount(),
+        cfg.myapp.logging.pad_side()
+    );
+    println!(
+        "  • Message separator: {:?} (note: different from TOML config)",
+        cfg.myapp.logging.msg_separator()
+    );
+    println!(
+        "  • Arrow character: {:?} (note: different from TOML config)",
+        cfg.myapp.logging.arrow_char()
+    );
+    println!(
+        "  • Timestamp format: {:?}",
+        cfg.myapp.logging.timestamp_format()
+    );
     println!("\nNote: Compare output with from-confyg-full to see visual differences!");
     println!();
 

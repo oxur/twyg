@@ -26,6 +26,11 @@ jobs:
           - name: Test
             command: make test
             components: ''
+          - name: Examples
+            command: |
+              make examples
+              make run-examples
+            components: ''
 
     steps:
       - uses: actions/checkout@v4
