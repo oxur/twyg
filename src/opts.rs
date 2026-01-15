@@ -62,25 +62,45 @@ pub struct Opts {
     report_caller: bool,
 
     /// Timestamp format (enum with presets + custom).
+    #[serde(default)]
     timestamp_format: TSFormat,
 
     /// Enable level padding for alignment.
+    #[serde(default)]
     pad_level: bool,
 
     /// Number of characters to pad level to.
+    #[serde(default = "default_pad_amount")]
     pad_amount: usize,
 
     /// Which side to pad the level string.
+    #[serde(default)]
     pad_side: PadSide,
 
     /// Separator between message and attributes (default: ": ").
+    #[serde(default = "default_msg_separator")]
     msg_separator: String,
 
     /// Arrow character to use (default: "▶").
+    #[serde(default = "default_arrow_char")]
     arrow_char: String,
 
     /// Fine-grained color configuration.
+    #[serde(default)]
     colors: Colors,
+}
+
+// Default value functions for serde
+fn default_pad_amount() -> usize {
+    5
+}
+
+fn default_msg_separator() -> String {
+    ": ".to_string()
+}
+
+fn default_arrow_char() -> String {
+    "▶".to_string()
 }
 
 impl Default for Opts {
