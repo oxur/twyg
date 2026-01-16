@@ -551,8 +551,8 @@ Apache License, Version 2.0
 
 [//]: ---Named-Links---
 
-[logo]: assets/images/logo-250x.png
-[logo-large]: assets/images/logo-1000x.png
+[logo]: assets/images/v2-x250.png
+[logo-large]: assets/images/v2.png
 [screenshot-thumb]: assets/images/screenshot-thumb.jpg
 [screenshot]: https://raw.githubusercontent.com/oxur/twyg/main/assets/images/screenshot.png
 [config]: https://github.com/mehcode/config-rs
