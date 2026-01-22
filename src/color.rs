@@ -1033,11 +1033,13 @@ mod tests {
         // Test that deserializing a partial Colors config preserves defaults for unspecified fields
         // This is the key fix: per-field #[serde(default)] ensures missing fields get defaults
 
-        let json = r#"{
-            "timestamp": { "fg": "HiBlack", "bg": "Reset" }
-        }"#;
+        let toml = r#"
+            [timestamp]
+            fg = "HiBlack"
+            bg = "Reset"
+        "#;
 
-        let colors: Colors = serde_json::from_str(json).expect("Failed to deserialize");
+        let colors: Colors = toml::from_str(toml).expect("Failed to deserialize");
 
         // Specified field should use config value
         assert_eq!(colors.timestamp, Some(Color::new(ColorAttribute::HiBlack, ColorAttribute::Reset)));
