@@ -219,43 +219,97 @@ impl Color {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Colors {
     /// Timestamp color (default: Green to match current behavior)
+    #[serde(default = "default_timestamp")]
     pub timestamp: Option<Color>,
 
     /// TRACE level color (default: HiBlue)
+    #[serde(default = "default_level_trace")]
     pub level_trace: Option<Color>,
 
     /// DEBUG level color (default: Cyan)
+    #[serde(default = "default_level_debug")]
     pub level_debug: Option<Color>,
 
     /// INFO level color (default: HiGreen)
+    #[serde(default = "default_level_info")]
     pub level_info: Option<Color>,
 
     /// WARN level color (default: HiYellow)
+    #[serde(default = "default_level_warn")]
     pub level_warn: Option<Color>,
 
     /// ERROR level color (default: Red)
+    #[serde(default = "default_level_error")]
     pub level_error: Option<Color>,
 
     /// Message text color (default: Green)
+    #[serde(default = "default_message")]
     pub message: Option<Color>,
 
     /// Arrow separator "▶" (default: Cyan)
+    #[serde(default = "default_arrow")]
     pub arrow: Option<Color>,
 
     /// Caller file name (default: HiYellow)
+    #[serde(default = "default_caller_file")]
     pub caller_file: Option<Color>,
 
     /// Caller line number (default: HiYellow)
+    #[serde(default = "default_caller_line")]
     pub caller_line: Option<Color>,
 
     /// Target/module name (default: HiYellow)
+    #[serde(default = "default_target")]
     pub target: Option<Color>,
 
     /// Structured logging key (default: HiYellow)
+    #[serde(default = "default_attr_key")]
     pub attr_key: Option<Color>,
 
     /// Structured logging value (default: Cyan)
+    #[serde(default = "default_attr_value")]
     pub attr_value: Option<Color>,
+}
+
+// Default value functions for serde per-field defaults
+fn default_timestamp() -> Option<Color> {
+    Some(Color::green())
+}
+fn default_level_trace() -> Option<Color> {
+    Some(Color::hi_blue())
+}
+fn default_level_debug() -> Option<Color> {
+    Some(Color::cyan())
+}
+fn default_level_info() -> Option<Color> {
+    Some(Color::hi_green())
+}
+fn default_level_warn() -> Option<Color> {
+    Some(Color::hi_yellow())
+}
+fn default_level_error() -> Option<Color> {
+    Some(Color::red())
+}
+fn default_message() -> Option<Color> {
+    Some(Color::green())
+}
+fn default_arrow() -> Option<Color> {
+    Some(Color::cyan())
+}
+fn default_caller_file() -> Option<Color> {
+    Some(Color::hi_yellow())
+}
+fn default_caller_line() -> Option<Color> {
+    Some(Color::hi_yellow())
+}
+fn default_target() -> Option<Color> {
+    Some(Color::hi_yellow())
+}
+fn default_attr_key() -> Option<Color> {
+    Some(Color::hi_yellow())
+}
+fn default_attr_value() -> Option<Color> {
+    Some(Color::cyan())
 }
 
 impl Default for Colors {
@@ -972,5 +1026,36 @@ mod tests {
         };
         let result3 = color_reset_fg.apply("test", Stream::Stdout);
         assert!(result3.contains("test"));
+    }
+
+    #[test]
+    fn test_colors_partial_deserialization_preserves_defaults() {
+        // Test that deserializing a partial Colors config preserves defaults for unspecified fields
+        // This is the key fix: per-field #[serde(default)] ensures missing fields get defaults
+
+        let json = r#"{
+            "timestamp": { "fg": "HiBlack", "bg": "Reset" }
+        }"#;
+
+        let colors: Colors = serde_json::from_str(json).expect("Failed to deserialize");
+
+        // Specified field should use config value
+        assert_eq!(colors.timestamp, Some(Color::new(ColorAttribute::HiBlack, ColorAttribute::Reset)));
+
+        // Unspecified fields should use defaults (not None!)
+        assert_eq!(colors.level_info, Some(Color::hi_green()), "level_info should have default");
+        assert_eq!(colors.level_error, Some(Color::red()), "level_error should have default");
+        assert_eq!(colors.message, Some(Color::green()), "message should have default");
+        assert_eq!(colors.arrow, Some(Color::cyan()), "arrow should have default");
+        assert_eq!(colors.target, Some(Color::hi_yellow()), "target should have default");
+
+        // All fields should be Some
+        assert!(colors.level_trace.is_some());
+        assert!(colors.level_debug.is_some());
+        assert!(colors.level_warn.is_some());
+        assert!(colors.caller_file.is_some());
+        assert!(colors.caller_line.is_some());
+        assert!(colors.attr_key.is_some());
+        assert!(colors.attr_value.is_some());
     }
 }
