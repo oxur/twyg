@@ -1042,14 +1042,37 @@ mod tests {
         let colors: Colors = toml::from_str(toml).expect("Failed to deserialize");
 
         // Specified field should use config value
-        assert_eq!(colors.timestamp, Some(Color::new(ColorAttribute::HiBlack, ColorAttribute::Reset)));
+        assert_eq!(
+            colors.timestamp,
+            Some(Color::new(ColorAttribute::HiBlack, ColorAttribute::Reset))
+        );
 
         // Unspecified fields should use defaults (not None!)
-        assert_eq!(colors.level_info, Some(Color::hi_green()), "level_info should have default");
-        assert_eq!(colors.level_error, Some(Color::red()), "level_error should have default");
-        assert_eq!(colors.message, Some(Color::green()), "message should have default");
-        assert_eq!(colors.arrow, Some(Color::cyan()), "arrow should have default");
-        assert_eq!(colors.target, Some(Color::hi_yellow()), "target should have default");
+        assert_eq!(
+            colors.level_info,
+            Some(Color::hi_green()),
+            "level_info should have default"
+        );
+        assert_eq!(
+            colors.level_error,
+            Some(Color::red()),
+            "level_error should have default"
+        );
+        assert_eq!(
+            colors.message,
+            Some(Color::green()),
+            "message should have default"
+        );
+        assert_eq!(
+            colors.arrow,
+            Some(Color::cyan()),
+            "arrow should have default"
+        );
+        assert_eq!(
+            colors.target,
+            Some(Color::hi_yellow()),
+            "target should have default"
+        );
 
         // All fields should be Some
         assert!(colors.level_trace.is_some());
