@@ -45,15 +45,19 @@ pub enum PadSide {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Opts {
     /// Enable colored output using ANSI escape codes.
+    #[serde(default)]
     coloured: bool,
 
     /// Output destination (stdout, stderr, or file).
+    #[serde(default)]
     output: Output,
 
     /// Minimum log level to display.
+    #[serde(default)]
     level: LogLevel,
 
     /// Include file name and line number in log output.
+    #[serde(default)]
     report_caller: bool,
 
     /// Timestamp format (enum with presets + custom).
@@ -792,5 +796,25 @@ mod tests {
         assert_eq!(default_pad_amount(), 5);
         assert_eq!(default_msg_separator(), ": ");
         assert_eq!(default_arrow_char(), "▶");
+    }
+
+    #[test]
+    fn test_opts_deserialize_partial_toml_uses_defaults() {
+        let toml_str = r#"level = "debug""#;
+        let opts: Opts = toml::from_str(toml_str).unwrap();
+
+        // The explicitly set field should have the provided value.
+        assert_eq!(opts.level(), LogLevel::Debug);
+
+        // All missing fields should have their default values.
+        assert!(!opts.coloured());
+        assert_eq!(opts.output(), &Output::Stdout);
+        assert!(!opts.report_caller());
+        assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
+        assert!(!opts.pad_level());
+        assert_eq!(opts.pad_amount(), 5);
+        assert_eq!(opts.pad_side(), PadSide::Right);
+        assert_eq!(opts.msg_separator(), ": ");
+        assert_eq!(opts.arrow_char(), "▶");
     }
 }

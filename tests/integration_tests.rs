@@ -1,4 +1,5 @@
 use log::{debug, error, info, trace, warn};
+use serde::Deserialize;
 use twyg::{LogLevel, Logger, Opts, OptsBuilder, Output, TSFormat};
 
 /// Test that setup works with default options and actually write log messages
@@ -189,4 +190,32 @@ fn test_output_parsing() {
         file_output.file_path().unwrap().to_str().unwrap(),
         "/tmp/test.log"
     );
+}
+
+/// Verifies that a partial TOML config (e.g. an application `[logging]` section)
+/// deserializes into `Opts` with missing fields filled by defaults.
+#[test]
+fn test_opts_partial_toml_logging_section_uses_defaults() {
+    #[derive(Deserialize)]
+    struct AppConfig {
+        logging: Opts,
+    }
+
+    let toml_str = r#"
+[logging]
+level = "debug"
+coloured = true
+"#;
+
+    let config: AppConfig = toml::from_str(toml_str).unwrap();
+    let opts = config.logging;
+
+    // Explicitly set fields should have the provided values.
+    assert_eq!(opts.level(), LogLevel::Debug);
+    assert!(opts.coloured());
+
+    // All missing fields should fall back to their defaults.
+    assert_eq!(opts.output(), &Output::Stdout);
+    assert!(!opts.report_caller());
+    assert_eq!(opts.timestamp_format(), &TSFormat::Standard);
 }
