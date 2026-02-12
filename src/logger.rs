@@ -65,6 +65,7 @@ struct LoggerConfig {
     msg_separator: String,
     arrow_char: String,
     colors: Colors,
+    module_filters: Vec<(String, LevelFilter)>,
 }
 
 /// Logger implementation that directly implements log::Log trait.
@@ -92,6 +93,11 @@ impl TwygLogger {
         let msg_separator = opts.msg_separator().to_string();
         let arrow_char = opts.arrow_char().to_string();
         let colors = opts.colors().clone();
+        let module_filters: Vec<(String, LevelFilter)> = opts
+            .module_filters()
+            .iter()
+            .map(|(prefix, level)| (prefix.clone(), LevelFilter::from(*level)))
+            .collect();
 
         TwygLogger {
             output: Arc::new(Mutex::new(output)),
@@ -106,6 +112,7 @@ impl TwygLogger {
                 msg_separator,
                 arrow_char,
                 colors,
+                module_filters,
             },
         }
     }
@@ -261,6 +268,12 @@ impl TwygLogger {
 impl Log for TwygLogger {
     #[inline]
     fn enabled(&self, metadata: &Metadata) -> bool {
+        let target = metadata.target();
+        for (prefix, level_filter) in &self.config.module_filters {
+            if target.starts_with(prefix.as_str()) {
+                return metadata.level() <= *level_filter;
+            }
+        }
         metadata.level() <= self.config.max_level
     }
 
@@ -460,7 +473,16 @@ impl Logger {
         // Create and install the logger
         let logger = TwygLogger::new(&self.opts, output_writer);
         log::set_boxed_logger(Box::new(logger)).map_err(|_| super::error::TwygError::InitError)?;
-        log::set_max_level(LevelFilter::from(self.opts.level()));
+
+        // Compute effective max level: the most permissive among global + all module filters.
+        // This ensures filtered messages reach TwygLogger::enabled() for per-module checks.
+        let effective_max = self
+            .opts
+            .module_filters()
+            .iter()
+            .map(|(_, l)| LevelFilter::from(*l))
+            .fold(LevelFilter::from(self.opts.level()), std::cmp::max);
+        log::set_max_level(effective_max);
 
         Ok(())
     }
@@ -662,6 +684,7 @@ mod tests {
             msg_separator: opts.msg_separator().to_string(),
             arrow_char: opts.arrow_char().to_string(),
             colors: opts.colors().clone(),
+            module_filters: Vec::new(),
         };
 
         assert_eq!(collector.format_pairs(&config), "");
@@ -689,6 +712,7 @@ mod tests {
             msg_separator: opts.msg_separator().to_string(),
             arrow_char: opts.arrow_char().to_string(),
             colors: opts.colors().clone(),
+            module_filters: Vec::new(),
         };
 
         let formatted = collector.format_pairs(&config);
@@ -723,6 +747,7 @@ mod tests {
             msg_separator: opts.msg_separator().to_string(),
             arrow_char: opts.arrow_char().to_string(),
             colors: opts.colors().clone(),
+            module_filters: Vec::new(),
         };
 
         let formatted = collector.format_pairs(&config);
@@ -912,6 +937,7 @@ mod tests {
             msg_separator: opts.msg_separator().to_string(),
             arrow_char: opts.arrow_char().to_string(),
             colors: opts.colors().clone(),
+            module_filters: Vec::new(),
         };
 
         let formatted = collector.format_pairs(&config);
@@ -952,6 +978,7 @@ mod tests {
             msg_separator: ": ".to_string(),
             arrow_char: "▶".to_string(),
             colors: empty_colors,
+            module_filters: Vec::new(),
         };
 
         let formatted = collector.format_pairs(&config);
@@ -1204,5 +1231,124 @@ mod tests {
             let result = logger.write_log(&record);
             assert!(result.is_ok());
         }
+    }
+
+    #[test]
+    fn test_twyg_logger_enabled_with_module_filter_suppresses() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .module_filter("tokenizers", LogLevel::Warn)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // TRACE from tokenizers should be suppressed
+        let metadata = Metadata::builder()
+            .level(Level::Trace)
+            .target("tokenizers::tokenizer::normalizer")
+            .build();
+        assert!(!logger.enabled(&metadata));
+
+        // DEBUG from tokenizers should be suppressed
+        let metadata = Metadata::builder()
+            .level(Level::Debug)
+            .target("tokenizers::models")
+            .build();
+        assert!(!logger.enabled(&metadata));
+    }
+
+    #[test]
+    fn test_twyg_logger_enabled_with_module_filter_allows() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .module_filter("tokenizers", LogLevel::Warn)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // WARN from tokenizers should be allowed
+        let metadata = Metadata::builder()
+            .level(Level::Warn)
+            .target("tokenizers::tokenizer")
+            .build();
+        assert!(logger.enabled(&metadata));
+
+        // ERROR from tokenizers should be allowed
+        let metadata = Metadata::builder()
+            .level(Level::Error)
+            .target("tokenizers")
+            .build();
+        assert!(logger.enabled(&metadata));
+    }
+
+    #[test]
+    fn test_twyg_logger_enabled_unmatched_uses_global() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Info)
+            .module_filter("tokenizers", LogLevel::Warn)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // INFO from an unmatched module should use global level (Info)
+        let metadata = Metadata::builder()
+            .level(Level::Info)
+            .target("my_app::handlers")
+            .build();
+        assert!(logger.enabled(&metadata));
+
+        // DEBUG from an unmatched module should be suppressed by global level
+        let metadata = Metadata::builder()
+            .level(Level::Debug)
+            .target("my_app::handlers")
+            .build();
+        assert!(!logger.enabled(&metadata));
+    }
+
+    #[test]
+    fn test_twyg_logger_enabled_first_prefix_match_wins() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .module_filter("hyper", LogLevel::Warn)
+            .module_filter("hyper::proto", LogLevel::Trace)
+            .build()
+            .unwrap();
+
+        let output = OutputWriter::Stdout(io::stdout());
+        let logger = TwygLogger::new(&opts, output);
+
+        // "hyper::proto" matches "hyper" first, so Warn applies (not Trace)
+        let metadata = Metadata::builder()
+            .level(Level::Debug)
+            .target("hyper::proto::h1")
+            .build();
+        assert!(!logger.enabled(&metadata));
+    }
+
+    #[test]
+    fn test_dispatch_max_level_includes_module_filters() {
+        // We can't actually call dispatch() in tests (global logger),
+        // but we can verify the effective max level computation logic.
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Warn)
+            .module_filter("my_app", LogLevel::Trace)
+            .build()
+            .unwrap();
+
+        // The effective max should be Trace (most permissive)
+        let global_level = LevelFilter::from(opts.level());
+        let effective_max = opts
+            .module_filters()
+            .iter()
+            .map(|(_, l)| LevelFilter::from(*l))
+            .fold(global_level, std::cmp::max);
+
+        assert_eq!(effective_max, LevelFilter::Trace);
     }
 }

@@ -26,8 +26,28 @@ pub use timestamp::TSFormat;
 /// * `report_caller`: setting to true will output the filename and line number
 ///   where the logging call was made
 /// * `time_format`: custom time format string (chrono format)
+/// * `module_filters`: per-module log level overrides (see below)
 ///
 /// With the options set, call the setup function, passing the opts as the argument.
+///
+/// # Per-Module Log Level Filtering
+///
+/// You can suppress noisy third-party crates while keeping verbose logging for
+/// your own code using `module_filter()`:
+///
+/// ```rust
+/// use twyg::{self, LogLevel, OptsBuilder};
+///
+/// let opts = OptsBuilder::new()
+///     .level(LogLevel::Trace)
+///     .module_filter("tokenizers", LogLevel::Warn)
+///     .module_filter("hyper", LogLevel::Info)
+///     .build()
+///     .unwrap();
+/// ```
+///
+/// Module filters match against the log record's target (module path) by prefix.
+/// The first matching prefix wins. Unmatched modules use the global `level`.
 ///
 /// # Structured Logging Support
 ///

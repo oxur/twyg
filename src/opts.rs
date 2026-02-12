@@ -83,6 +83,15 @@ pub struct Opts {
     /// Fine-grained color configuration.
     #[serde(default)]
     colors: Colors,
+
+    /// Per-module log level overrides.
+    ///
+    /// Keys are module path prefixes (e.g., `"tokenizers"`, `"hyper::proto"`).
+    /// Values are the maximum log level for that module.
+    /// Modules not matching any prefix use the global `level`.
+    /// Prefixes are matched in order; the first match wins.
+    #[serde(default)]
+    module_filters: Vec<(String, LogLevel)>,
 }
 
 // Default value functions for serde
@@ -112,6 +121,7 @@ impl Default for Opts {
             msg_separator: ": ".to_string(),
             arrow_char: "▶".to_string(),
             colors: Colors::default(),
+            module_filters: Vec::new(),
         }
     }
 }
@@ -185,6 +195,11 @@ impl Opts {
         &self.colors
     }
 
+    /// Returns the per-module log level filters.
+    pub fn module_filters(&self) -> &[(String, LogLevel)] {
+        &self.module_filters
+    }
+
     /// Returns the time format string (deprecated, for backward compatibility).
     #[deprecated(since = "0.6.1", note = "Use timestamp_format() instead")]
     pub fn time_format(&self) -> Option<&str> {
@@ -222,6 +237,7 @@ pub struct OptsBuilder {
     msg_separator: String,
     arrow_char: String,
     colors: Colors,
+    module_filters: Vec<(String, LogLevel)>,
 }
 
 impl Default for OptsBuilder {
@@ -245,6 +261,7 @@ impl OptsBuilder {
             msg_separator: ": ".to_string(),
             arrow_char: "▶".to_string(),
             colors: Colors::default(),
+            module_filters: Vec::new(),
         }
     }
 
@@ -327,6 +344,36 @@ impl OptsBuilder {
         self
     }
 
+    /// Add a per-module log level filter.
+    ///
+    /// The prefix is matched against the log record's target (module path).
+    /// The first matching prefix wins. Unmatched modules use the global level.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use twyg::{LogLevel, OptsBuilder};
+    ///
+    /// let opts = OptsBuilder::new()
+    ///     .level(LogLevel::Trace)
+    ///     .module_filter("tokenizers", LogLevel::Warn)
+    ///     .module_filter("hyper", LogLevel::Info)
+    ///     .build()
+    ///     .unwrap();
+    /// ```
+    pub fn module_filter(mut self, prefix: impl Into<String>, level: LogLevel) -> Self {
+        self.module_filters.push((prefix.into(), level));
+        self
+    }
+
+    /// Set all per-module log level filters at once.
+    ///
+    /// Replaces any previously added filters.
+    pub fn module_filters(mut self, filters: Vec<(String, LogLevel)>) -> Self {
+        self.module_filters = filters;
+        self
+    }
+
     /// Set a custom time format string (deprecated).
     ///
     /// The format string uses chrono's format syntax.
@@ -370,6 +417,7 @@ impl OptsBuilder {
             msg_separator: self.msg_separator,
             arrow_char: self.arrow_char,
             colors: self.colors,
+            module_filters: self.module_filters,
         })
     }
 }
@@ -792,5 +840,92 @@ mod tests {
         assert_eq!(default_pad_amount(), 5);
         assert_eq!(default_msg_separator(), ": ");
         assert_eq!(default_arrow_char(), "▶");
+    }
+
+    #[test]
+    fn test_opts_module_filters_default_empty() {
+        let opts = Opts::default();
+        assert!(opts.module_filters().is_empty());
+
+        let opts = Opts::new();
+        assert!(opts.module_filters().is_empty());
+    }
+
+    #[test]
+    fn test_opts_builder_with_module_filter() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .module_filter("tokenizers", LogLevel::Warn)
+            .module_filter("hyper", LogLevel::Info)
+            .build()
+            .unwrap();
+
+        let filters = opts.module_filters();
+        assert_eq!(filters.len(), 2);
+        assert_eq!(filters[0].0, "tokenizers");
+        assert_eq!(filters[0].1, LogLevel::Warn);
+        assert_eq!(filters[1].0, "hyper");
+        assert_eq!(filters[1].1, LogLevel::Info);
+    }
+
+    #[test]
+    fn test_opts_builder_with_module_filters() {
+        let filters = vec![
+            ("tokenizers".to_string(), LogLevel::Warn),
+            ("hyper".to_string(), LogLevel::Info),
+        ];
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .module_filters(filters.clone())
+            .build()
+            .unwrap();
+
+        assert_eq!(opts.module_filters(), &filters[..]);
+    }
+
+    #[test]
+    fn test_opts_module_filters_serde_roundtrip() {
+        let opts = OptsBuilder::new()
+            .level(LogLevel::Trace)
+            .module_filter("tokenizers", LogLevel::Warn)
+            .module_filter("hyper::proto", LogLevel::Error)
+            .build()
+            .unwrap();
+
+        let serialized = serde_json::to_string(&opts).unwrap();
+        let deserialized: Opts = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(
+            opts.module_filters().len(),
+            deserialized.module_filters().len()
+        );
+        assert_eq!(
+            opts.module_filters()[0].0,
+            deserialized.module_filters()[0].0
+        );
+        assert_eq!(
+            opts.module_filters()[0].1,
+            deserialized.module_filters()[0].1
+        );
+        assert_eq!(
+            opts.module_filters()[1].0,
+            deserialized.module_filters()[1].0
+        );
+        assert_eq!(
+            opts.module_filters()[1].1,
+            deserialized.module_filters()[1].1
+        );
+    }
+
+    #[test]
+    fn test_opts_builder_module_filters_replaces_previous() {
+        let opts = OptsBuilder::new()
+            .module_filter("a", LogLevel::Warn)
+            .module_filters(vec![("b".to_string(), LogLevel::Error)])
+            .build()
+            .unwrap();
+
+        assert_eq!(opts.module_filters().len(), 1);
+        assert_eq!(opts.module_filters()[0].0, "b");
     }
 }
